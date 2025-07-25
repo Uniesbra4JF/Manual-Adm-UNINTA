@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Interativo UNINTA</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Biblioteca de Ícones (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Fontes do Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+    <script>
+      // Configuração do Tailwind para o Modo Escuro
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            @apply bg-slate-100 text-slate-800 dark:bg-[#121212] dark:text-[#E0E0E0] transition-colors duration-300;
+        }
+        .header-title {
+            font-family: 'Poppins', sans-serif;
+        }
+        .dragging {
+            opacity: 0.5;
+            @apply border-2 border-dashed border-blue-500;
+        }
+        [contenteditable="true"] {
+            @apply outline-dashed outline-2 outline-emerald-400 p-1 rounded bg-emerald-50 dark:bg-emerald-500/10;
+        }
+        [contenteditable="true"]:focus {
+            @apply bg-emerald-100 dark:bg-emerald-500/20 outline-solid;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Scrollbar customizada para o sumário */
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-nav::-webkit-scrollbar-track {
+            @apply bg-gray-800;
+        }
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            @apply bg-gray-600 rounded-full;
+        }
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            @apply bg-gray-500;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="relative min-h-screen lg:flex">
+        <!-- Botão para abrir sumário em telas pequenas -->
+        <button id="sidebar-open-btn" class="lg:hidden fixed top-4 left-4 z-30 p-2 bg-white/80 dark:bg-[#282828]/80 backdrop-blur-sm rounded-full shadow-lg text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-gray-700">
+            <i data-lucide="menu"></i>
+        </button>
+
+        <!-- Sumário Fixo (Barra Lateral Esquerda) -->
+        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#121212] text-white p-6 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-40 flex flex-col border-r border-[#282828]">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-[#1E90FF]">Sumário</h2>
+                <button id="sidebar-close-btn" class="lg:hidden text-slate-400 hover:text-white">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <nav id="menu-nav-links" class="flex-grow overflow-y-auto sidebar-nav pr-2">
+                <!-- Links do menu serão injetados aqui -->
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <div class="lg:ml-72 w-full transition-all duration-300">
+            <!-- Botão de Configurações -->
+            <div class="fixed top-4 right-4 z-30">
+                <button id="settings-btn" class="p-2 bg-white/80 dark:bg-[#282828]/80 backdrop-blur-sm rounded-full shadow-lg text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-gray-700">
+                    <i data-lucide="settings-2"></i>
+                </button>
+            </div>
+
+            <!-- Painel de Configurações -->
+            <div id="settings-panel" class="fixed top-0 right-0 h-full w-72 bg-white dark:bg-[#282828] transform translate-x-full transition-transform duration-300 ease-in-out z-40 shadow-2xl p-6 border-l dark:border-gray-700">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800 dark:text-[#1E90FF]">Configurações</h2>
+                <div class="flex items-center justify-between">
+                    <span class="font-medium text-slate-600 dark:text-[#E0E0E0]">Modo Escuro</span>
+                    <button id="dark-mode-toggle" class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800">
+                        <span class="sr-only">Ativar modo escuro</span>
+                        <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300"></span>
+                    </button>
+                </div>
+            </div>
+
+            <main class="container mx-auto p-4 md:p-8 pt-20 lg:pt-8">
+                <header class="text-center mb-10">
+                    <h1 class="header-title text-4xl md:text-5xl font-bold text-slate-800 dark:text-slate-100">
+                        Manual Administrativo <span class="text-blue-600 dark:text-[#1E90FF]">UNINTA</span>
+                    </h1>
+                    <p class="mt-2 text-lg text-slate-500 dark:text-slate-400">Guia interativo de procedimentos e informações (Particular).</p>
+                </header>
+
+                <div id="pinned-container" class="mb-8"></div>
+                <div id="main-content" class="space-y-6"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Controles do ADM -->
+    <div class="fixed bottom-5 left-5 lg:left-[calc(18rem+1.25rem)] z-20 flex items-center space-x-3 transition-all duration-300">
+        <button id="admin-toggle-btn" class="p-3 bg-white dark:bg-[#282828] rounded-full shadow-lg text-slate-600 dark:text-[#E0E0E0] hover:bg-slate-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-200">
+            <i data-lucide="shield"></i>
+        </button>
+        <button id="save-btn" class="hidden items-center px-4 py-2 bg-green-500 text-white font-semibold rounded-full shadow-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200">
+            <i data-lucide="save" class="mr-2 h-5 w-5"></i>
+            Salvar Alterações
+        </button>
+    </div>
+
+    <!-- Templates -->
+    <template id="section-template">
+        <section class="bg-white dark:bg-[#282828] rounded-xl shadow-md dark:shadow-lg dark:shadow-black/20 overflow-hidden transition-all duration-300 ease-in-out fade-in" draggable="false">
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <div class="prose prose-slate dark:prose-invert max-w-none w-full">
+                        <h2 class="text-2xl font-bold mb-4" data-editable></h2>
+                        <div data-editable></div>
+                    </div>
+                    <button class="pin-btn text-slate-400 hover:text-blue-500 dark:hover:text-[#1E90FF] transition-colors p-1 ml-4 flex-shrink-0" title="Fixar/Desafixar Tópico">
+                        <i data-lucide="pin" class="h-5 w-5"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </template>
+
+    <template id="pinned-item-template">
+        <div class="bg-[#00FF85] text-black rounded-lg p-4 shadow-lg flex justify-between items-center fade-in">
+            <a href="#" class="font-semibold hover:underline"></a>
+            <button class="unpin-btn text-black/70 hover:text-black" title="Desafixar Tópico">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+        </div>
+    </template>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DADOS INICIAIS ---
+            const initialData = [
+                { id: 'info-gerais', title: '1. Informações Gerais', content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Situação Financeira:</strong> Para solicitar trancamento, desistência ou troca de curso, o aluno deve estar com a situação financeira regularizada.</li><li><strong>Documentação na Matrícula:</strong> Uma declaração de conclusão é aceita apenas no ato da matrícula. A partir do segundo semestre, a apresentação do diploma e histórico originais é obrigatória.</li><li><strong>Unidades Curriculares de Extensão (UCE):</strong> Aplicam-se apenas aos cursos de Licenciatura e Bacharelado.</li></ul>`},
+                { id: 'graduacao', title: '2.1. Graduação', content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Requisito:</strong> Ensino médio completo é obrigatório.</li><li><strong>Atividades Complementares:</strong> Todos os cursos exigem o envio de atividades complementares.</li><li><strong>ENADE:</strong> A participação é obrigatória para os cursos de Licenciatura.</li><li><strong>Bacharelado:</strong> Pode ser cursado mesmo por quem já possui um diploma de ensino superior em outra área.</li></ul>`},
+                { id: 'segunda-licenciatura', title: '2.2. Segunda Licenciatura', content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Requisito de Ingresso:</strong> É obrigatório possuir uma primeira Licenciatura completa na mesma área.</li><li><strong>Processo Seletivo:</strong> Ingresso via análise do diploma e histórico superior.</li><li><strong>Aproveitamento de Disciplinas:</strong> Não há, pois o curso tem duração reduzida.</li><li><strong>Atividades Obrigatórias:</strong> Todos os cursos incluem estágios e seminários ou UCE.</li></ul>`},
+                { id: 'pos-graduacao', title: '2.3. Pós-Graduação', content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Requisito:</strong> Ensino superior completo é obrigatório.</li><li><strong>TCC:</strong> Nenhum curso exige, conforme resolução do MEC.</li><li><strong>Estágio:</strong> Não é obrigatório, exceto para <strong>Psicopedagogia Institucional e Clínica</strong>.</li></ul>`},
+                { id: 'troca-curso', title: '3.1. Troca de Curso', content: `<p class="mb-4">O pedido é feito pelo próprio estudante através do Sistema Acadêmico.</p><div class="p-4 bg-red-100 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-700"><h4 class="font-bold text-red-800 dark:text-red-300">Regras Importantes</h4><ul class="list-disc pl-5 mt-2 space-y-1 text-red-700 dark:text-red-400"><li>Valores pagos não são devolvidos nem aproveitados.</li><li>Bolas de estudo não são transferidas.</li><li>O aluno pagará a semestralidade integral do novo curso.</li></ul></div>`},
+                { id: 'trancamento', title: '3.2. Trancamento', content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Quando:</strong> A partir do 2º semestre.</li><li><strong>Limite:</strong> Até 4 vezes durante o curso.</li><li><strong>Taxa:</strong> R$ 80,00 por solicitação.</li><li><strong>Abandono:</strong> A não realização dos procedimentos resulta em abandono de curso.</li></ul>`},
+                { id: 'solicitacao-certificado', title: '3.4. Solicitação de Certificado', content: `<h3 class="font-semibold text-lg mb-2">Condições:</h3><ul class="list-disc pl-5 space-y-1 mb-4"><li>Prazo do curso concluído.</li><li>Financeiro quitado.</li><li>Aprovado em todas as disciplinas.</li></ul><div class="mt-2 p-3 bg-slate-100 dark:bg-[#282828]/60 border border-slate-200 dark:border-gray-600 rounded-md"><p class="font-bold">📌 Documentação Obrigatória (PDF):</p><ul class="list-disc pl-5 text-sm mt-2"><li>RG, CPF, Comprovante de endereço.</li><li>Diploma e Histórico da graduação.</li></ul></div>`},
+                { id: 'bolsa-cebas', title: '4. Bolsa CEBAS', content: `<h3 class="font-semibold text-lg mb-2">Critérios:</h3><ul class="list-disc pl-5 space-y-1 mb-4"><li>Não possuir diploma superior.</li><li>Renda familiar per capita de até 1,5 salário mínimo.</li><li>Ensino fundamental e médio em escola pública ou como bolsista integral.</li><li>Matrícula ativa.</li></ul><div class="p-3 bg-blue-100 dark:bg-[#1E90FF]/10 border-l-4 border-blue-500 dark:border-[#1E90FF]"><strong class="dark:text-[#87CEFA]">Como Solicitar:</strong> Enviar documentação para <a href="mailto:bolsas@uninta.edu.br" class="font-medium text-blue-700 dark:text-[#1E90FF]">bolsas@uninta.edu.br</a>.</div>`},
+                { id: 'apresentacao-candidato', title: '5. Modelo de Apresentação', content: `<blockquote class="p-4 my-4 border-l-4 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-[#282828]/80"><p class="text-md italic leading-relaxed">"Bom dia, meu nome é José e estou aqui para ajudá-lo no polo da Uninta..."</p></blockquote>`}
+            ];
+
+            // --- ESTADO DA APLICAÇÃO ---
+            let state = { isAdmin: false, content: [], pinnedItems: [] };
+
+            // --- ELEMENTOS DO DOM ---
+            const mainContent = document.getElementById('main-content');
+            const pinnedContainer = document.getElementById('pinned-container');
+            const sectionTemplate = document.getElementById('section-template');
+            const pinnedItemTemplate = document.getElementById('pinned-item-template');
+            const adminToggleBtn = document.getElementById('admin-toggle-btn');
+            const saveBtn = document.getElementById('save-btn');
+            
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOpenBtn = document.getElementById('sidebar-open-btn');
+            const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+            const menuNavLinks = document.getElementById('menu-nav-links');
+
+            const settingsPanel = document.getElementById('settings-panel');
+            const settingsBtn = document.getElementById('settings-btn');
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+            // --- FUNÇÕES ---
+            function saveState() {
+                const currentOrderIds = Array.from(mainContent.children).map(sectionEl => sectionEl.dataset.id);
+                const contentMap = new Map(state.content.map(item => [item.id, item]));
+                document.querySelectorAll('#main-content section').forEach(sectionEl => {
+                    const id = sectionEl.dataset.id;
+                    const itemInState = contentMap.get(id);
+                    if(itemInState) {
+                       itemInState.title = sectionEl.querySelector('h2').innerText;
+                       itemInState.content = sectionEl.querySelector('div[data-editable]').innerHTML;
+                    }
+                });
+                const reorderedContent = currentOrderIds.map(id => contentMap.get(id));
+                state.content.forEach(item => {
+                    if (!reorderedContent.find(rc => rc.id === item.id)) {
+                        reorderedContent.push(item);
+                    }
+                });
+                state.content = reorderedContent;
+                localStorage.setItem('unintaManualState', JSON.stringify({ content: state.content, pinnedItems: state.pinnedItems }));
+                
+                saveBtn.innerHTML = `<i data-lucide="check-circle" class="mr-2 h-5 w-5"></i> Salvo!`;
+                lucide.createIcons();
+                setTimeout(() => {
+                    saveBtn.innerHTML = `<i data-lucide="save" class="mr-2 h-5 w-5"></i> Salvar Alterações`;
+                    lucide.createIcons();
+                }, 2000);
+            }
+
+            function loadState() {
+                const savedState = localStorage.getItem('unintaManualState');
+                if (savedState) {
+                    const parsedState = JSON.parse(savedState);
+                    state.content = parsedState.content;
+                    state.pinnedItems = parsedState.pinnedItems || [];
+                } else {
+                    state.content = initialData;
+                    state.pinnedItems = [];
+                }
+                render();
+            }
+
+            function render() {
+                mainContent.innerHTML = '';
+                pinnedContainer.innerHTML = '';
+                menuNavLinks.innerHTML = '';
+                const contentMap = new Map(state.content.map(item => [item.id, item]));
+
+                if (state.pinnedItems.length > 0) {
+                    const pinnedHeader = document.createElement('h3');
+                    pinnedHeader.className = "text-xl font-bold text-slate-600 dark:text-[#E0E0E0] mb-3 flex items-center";
+                    pinnedHeader.innerHTML = `<i data-lucide="pin" class="h-5 w-5 mr-2 text-blue-600 dark:text-[#1E90FF]"></i> Tópicos Fixados`;
+                    pinnedContainer.appendChild(pinnedHeader);
+                    const pinnedGrid = document.createElement('div');
+                    pinnedGrid.className = 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-8';
+                    state.pinnedItems.forEach(id => {
+                        const item = contentMap.get(id);
+                        if (!item) return;
+                        const pinnedClone = pinnedItemTemplate.content.cloneNode(true);
+                        const link = pinnedClone.querySelector('a');
+                        link.textContent = item.title;
+                        link.href = `#${item.id}`;
+                        link.onclick = (e) => { e.preventDefault(); document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' }); };
+                        pinnedClone.querySelector('.unpin-btn').addEventListener('click', (e) => { e.preventDefault(); togglePin(item.id); });
+                        pinnedGrid.appendChild(pinnedClone);
+                    });
+                    pinnedContainer.appendChild(pinnedGrid);
+                }
+
+                state.content.forEach(item => {
+                    if (!state.pinnedItems.includes(item.id)) {
+                        const sectionClone = sectionTemplate.content.cloneNode(true);
+                        const sectionEl = sectionClone.querySelector('section');
+                        sectionEl.id = item.id;
+                        sectionEl.dataset.id = item.id;
+                        sectionEl.querySelector('h2').textContent = item.title;
+                        sectionEl.querySelector('div[data-editable]').innerHTML = item.content;
+                        sectionEl.querySelector('.pin-btn').addEventListener('click', () => togglePin(item.id));
+                        mainContent.appendChild(sectionClone);
+                    }
+                    const menuLink = document.createElement('a');
+                    menuLink.href = `#${item.id}`;
+                    menuLink.textContent = item.title;
+                    menuLink.className = 'block py-2 px-3 rounded-md hover:bg-gray-700 transition-colors';
+                    menuLink.onclick = (e) => {
+                        e.preventDefault();
+                        document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
+                        toggleSidebar(false);
+                    };
+                    menuNavLinks.appendChild(menuLink);
+                });
+                updateAdminUI();
+                lucide.createIcons();
+            }
+
+            function togglePin(id) {
+                const index = state.pinnedItems.indexOf(id);
+                if (index > -1) {
+                    state.pinnedItems.splice(index, 1);
+                } else {
+                    if (state.pinnedItems.length < 5) {
+                        state.pinnedItems.push(id);
+                    } else {
+                        alert('Você pode fixar no máximo 5 tópicos.');
+                        return;
+                    }
+                }
+                saveState();
+                render();
+            }
+
+            function updateAdminUI() {
+                const editableElements = document.querySelectorAll('[data-editable]');
+                const sections = document.querySelectorAll('#main-content section');
+                if (state.isAdmin) {
+                    saveBtn.classList.remove('hidden');
+                    adminToggleBtn.classList.add('bg-blue-500', 'text-white', 'dark:bg-[#1E90FF]');
+                    editableElements.forEach(el => el.setAttribute('contenteditable', 'true'));
+                    sections.forEach(sec => sec.setAttribute('draggable', 'true'));
+                } else {
+                    saveBtn.classList.add('hidden');
+                    adminToggleBtn.classList.remove('bg-blue-500', 'text-white', 'dark:bg-[#1E90FF]');
+                    editableElements.forEach(el => el.setAttribute('contenteditable', 'false'));
+                    sections.forEach(sec => sec.setAttribute('draggable', 'false'));
+                }
+            }
+            
+            function toggleAdminMode() {
+                if (!state.isAdmin) {
+                    const password = prompt("Digite a senha de administrador:");
+                    if (password !== "admin123") { alert("Senha incorreta!"); return; }
+                }
+                state.isAdmin = !state.isAdmin;
+                updateAdminUI();
+            }
+
+            function toggleSidebar(show) {
+                if (show) sidebar.classList.remove('-translate-x-full');
+                else sidebar.classList.add('-translate-x-full');
+            }
+
+            function toggleSettings(show) {
+                if (show) settingsPanel.classList.remove('translate-x-full');
+                else settingsPanel.classList.add('translate-x-full');
+            }
+
+            // --- Dark Mode ---
+            function applyTheme(theme) {
+                const toggle = darkModeToggle;
+                const circle = toggle.querySelector('span');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    toggle.classList.add('bg-[#1E90FF]');
+                    circle.classList.add('translate-x-5');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    toggle.classList.remove('bg-[#1E90FF]');
+                    circle.classList.remove('translate-x-5');
+                }
+            }
+
+            function toggleTheme() {
+                const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            }
+
+            // --- Drag & Drop ---
+            let draggedItem = null;
+            mainContent.addEventListener('dragstart', (e) => {
+                if (!state.isAdmin) return;
+                draggedItem = e.target.closest('section');
+                if (draggedItem) {
+                    setTimeout(() => { draggedItem.classList.add('dragging'); }, 0);
+                    e.dataTransfer.effectAllowed = 'move';
+                }
+            });
+            mainContent.addEventListener('dragend', () => { if (draggedItem) { draggedItem.classList.remove('dragging'); draggedItem = null; } });
+            mainContent.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (!state.isAdmin || !draggedItem) return;
+                const target = e.target.closest('section');
+                if (target && target !== draggedItem) {
+                    const rect = target.getBoundingClientRect();
+                    const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+                    mainContent.insertBefore(draggedItem, next && target.nextSibling || target);
+                }
+            });
+            mainContent.addEventListener('drop', (e) => { e.preventDefault(); if(state.isAdmin) saveState(); });
+
+            // --- EVENT LISTENERS ---
+            adminToggleBtn.addEventListener('click', toggleAdminMode);
+            saveBtn.addEventListener('click', saveState);
+            sidebarOpenBtn.addEventListener('click', () => toggleSidebar(true));
+            sidebarCloseBtn.addEventListener('click', () => toggleSidebar(false));
+            settingsBtn.addEventListener('click', () => toggleSettings(true));
+            darkModeToggle.addEventListener('click', toggleTheme);
+            document.addEventListener('click', (e) => {
+                if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) toggleSettings(false);
+                if (!sidebar.contains(e.target) && !sidebarOpenBtn.contains(e.target)) toggleSidebar(false);
+            });
+
+            // --- INICIALIZAÇÃO ---
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            applyTheme(savedTheme);
+            loadState();
+        });
+    </script>
+</body>
+</html>
