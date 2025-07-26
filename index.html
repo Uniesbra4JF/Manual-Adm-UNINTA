@@ -262,6 +262,25 @@
 
             // --- FUNÇÕES ---
             function saveState() {
+                // Atualiza o estado a partir do DOM antes de salvar
+                const currentOrderIds = Array.from(contentSections.children).map(sectionEl => sectionEl.dataset.id);
+                const contentMap = new Map(state.content.map(item => [item.id, item]));
+
+                const reorderedContent = currentOrderIds.map(id => {
+                    const sectionEl = document.getElementById(id);
+                    const title = sectionEl.querySelector('h2').innerText;
+                    const content = sectionEl.querySelector('div[data-editable]').innerHTML;
+                    const originalItem = contentMap.get(id);
+                    return { ...originalItem, title, content };
+                });
+
+                state.content.forEach(item => {
+                    if (!reorderedContent.find(rc => rc.id === item.id)) {
+                        reorderedContent.push(item);
+                    }
+                });
+                state.content = reorderedContent;
+
                 localStorage.setItem('unintaManualState', JSON.stringify({ content: state.content, pinnedItems: state.pinnedItems }));
                 
                 saveBtn.innerHTML = `<i data-lucide="check-circle" class="mr-2 h-5 w-5"></i> Salvo!`;
@@ -558,7 +577,13 @@
                     contentSections.insertBefore(draggedItem, next && target.nextSibling || target);
                 }
             });
-            contentSections.addEventListener('drop', (e) => { e.preventDefault(); if(state.isAdmin) saveState(); });
+            contentSections.addEventListener('drop', (e) => { 
+                e.preventDefault(); 
+                if (state.isAdmin) { 
+                    saveState(); 
+                    render(); 
+                } 
+            });
 
             // --- EVENT LISTENERS ---
             adminToggleBtn.addEventListener('click', toggleAdminMode);
@@ -595,4 +620,4 @@
         });
     </script>
 </body>
-</ht
+</html>
