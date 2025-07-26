@@ -26,7 +26,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            @apply bg-slate-100 text-slate-800 dark:bg-[#070359] dark:text-[#585204] transition-colors duration-300;
+            @apply bg-slate-100 text-slate-800 dark:bg-[#0F0917] dark:text-[#0F0917] transition-colors duration-300;
         }
         .header-title {
             font-family: 'Poppins', sans-serif;
@@ -72,7 +72,7 @@
         </button>
 
         <!-- Sumário Fixo (Barra Lateral Esquerda) -->
-        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#121212] text-white p-6 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-40 flex flex-col border-r border-[#282828]">
+        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-[#0F0917] text-white p-6 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-40 flex flex-col border-r border-[#282828]">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-2xl font-bold text-[#1E90FF]">Sumário</h2>
                 <button id="sidebar-close-btn" class="lg:hidden text-slate-400 hover:text-white">
@@ -97,7 +97,7 @@
             <div id="settings-panel" class="fixed top-0 right-0 h-full w-72 bg-white dark:bg-[#282828] transform translate-x-full transition-transform duration-300 ease-in-out z-40 shadow-2xl p-6 border-l dark:border-gray-700">
                 <h2 class="text-2xl font-bold mb-6 text-slate-800 dark:text-[#1E90FF]">Configurações</h2>
                 <div class="flex items-center justify-between">
-                    <span class="font-medium text-slate-600 dark:text-[#E0E0E0]">Modo Escuro</span>
+                    <span class="font-medium text-slate-600 dark:text-[#F5F5F5]">Modo Escuro</span>
                     <button id="dark-mode-toggle" class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800">
                         <span class="sr-only">Ativar modo escuro</span>
                         <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300"></span>
@@ -121,7 +121,7 @@
 
     <!-- Controles do ADM -->
     <div class="fixed bottom-5 left-5 lg:left-[calc(18rem+1.25rem)] z-20 flex items-center space-x-3 transition-all duration-300">
-        <button id="admin-toggle-btn" class="p-3 bg-white dark:bg-[#282828] rounded-full shadow-lg text-slate-600 dark:text-[#E0E0E0] hover:bg-slate-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-200">
+        <button id="admin-toggle-btn" class="p-3 bg-white dark:bg-[#282828] rounded-full shadow-lg text-slate-600 dark:text-[#F5F5F5] hover:bg-slate-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-200">
             <i data-lucide="shield"></i>
         </button>
         <button id="save-btn" class="hidden items-center px-4 py-2 bg-green-500 text-white font-semibold rounded-full shadow-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200">
@@ -135,7 +135,7 @@
         <section class="bg-white dark:bg-[#282828] rounded-xl shadow-md dark:shadow-lg dark:shadow-black/20 overflow-hidden transition-all duration-300 ease-in-out fade-in" draggable="false">
             <div class="p-6">
                 <div class="flex justify-between items-start">
-                    <div class="prose prose-slate dark:prose-invert max-w-none w-full">
+                    <div class="prose prose-slate dark:prose-invert max-w-none w-full dark:text-[#F5F5F5]">
                         <h2 class="text-2xl font-bold mb-4" data-editable></h2>
                         <div data-editable></div>
                     </div>
@@ -241,7 +241,7 @@
 
                 if (state.pinnedItems.length > 0) {
                     const pinnedHeader = document.createElement('h3');
-                    pinnedHeader.className = "text-xl font-bold text-slate-600 dark:text-[#E0E0E0] mb-3 flex items-center";
+                    pinnedHeader.className = "text-xl font-bold text-slate-600 dark:text-[#F5F5F5] mb-3 flex items-center";
                     pinnedHeader.innerHTML = `<i data-lucide="pin" class="h-5 w-5 mr-2 text-blue-600 dark:text-[#1E90FF]"></i> Tópicos Fixados`;
                     pinnedContainer.appendChild(pinnedHeader);
                     const pinnedGrid = document.createElement('div');
