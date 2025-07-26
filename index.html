@@ -94,8 +94,14 @@
 </head>
 <body class="min-h-screen">
 
+    <!-- Tela de Carregamento -->
+    <div id="loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#111827] transition-opacity duration-500">
+        <div class="text-blue-400 text-2xl font-bold">UNINTA</div>
+        <p class="text-gray-400 mt-2">Carregando manual...</p>
+    </div>
+
     <!-- Container principal que gerencia o layout da sidebar -->
-    <div id="app-container">
+    <div id="app-container" class="opacity-0 transition-opacity duration-500">
         <!-- Sidebar -->
         <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen bg-gray-900/80 backdrop-blur-lg border-r border-gray-700/60 transition-transform duration-300 ease-in-out">
             <div class="flex flex-col h-full p-4">
@@ -222,6 +228,7 @@
             let state = { isAdmin: false, content: [], pinnedItems: [], isSidebarPinned: true };
 
             // --- ELEMENTOS DO DOM ---
+            const appContainer = document.getElementById('app-container');
             const mainContent = document.getElementById('main-content');
             const contentSections = document.getElementById('content-sections');
             const pinnedContainer = document.getElementById('pinned-container');
@@ -269,6 +276,16 @@
                 state.isSidebarPinned = window.innerWidth < 1024 ? false : (savedSidebarPin === null ? true : JSON.parse(savedSidebarPin));
 
                 render();
+
+                // Esconde o loader e mostra o conteúdo
+                const loader = document.getElementById('loader');
+                
+                setTimeout(() => {
+                    loader.classList.add('opacity-0');
+                    appContainer.classList.remove('opacity-0');
+                    // Remove o loader do DOM após a transição
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }, 100); 
             }
 
             function render() {
