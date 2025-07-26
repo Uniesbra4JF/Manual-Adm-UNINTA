@@ -436,7 +436,7 @@
             
             function toggleAdminMode() {
                 if (!state.isAdmin) {
-                    const password = prompt("Digite a senha de administrador:");
+                    const password = prompt("Digite a senha de administrador: 123");
                     if (password !== "123") { alert("Senha incorreta!"); return; }
                 }
                 state.isAdmin = !state.isAdmin;
