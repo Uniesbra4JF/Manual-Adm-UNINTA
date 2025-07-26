@@ -154,6 +154,12 @@
             Salvar
         </button>
     </div>
+    
+    <!-- Botão para Adicionar Novo Card -->
+    <button id="add-card-btn" class="hidden fixed bottom-5 right-5 z-20 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-110">
+        <i data-lucide="plus"></i>
+    </button>
+
 
     <!-- Modal de Confirmação para Exclusão -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center">
@@ -241,6 +247,7 @@
             const adminControls = document.getElementById('admin-controls');
             const adminToggleBtn = document.getElementById('admin-toggle-btn');
             const saveBtn = document.getElementById('save-btn');
+            const addCardBtn = document.getElementById('add-card-btn');
             
             const sidebar = document.getElementById('sidebar');
             const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
@@ -393,12 +400,14 @@
 
                 if (state.isAdmin) {
                     saveBtn.classList.remove('hidden');
+                    addCardBtn.classList.remove('hidden');
                     adminToggleBtn.classList.add('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.remove('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'true'));
                     sections.forEach(sec => sec.setAttribute('draggable', 'true'));
                 } else {
                     saveBtn.classList.add('hidden');
+                    addCardBtn.classList.add('hidden');
                     adminToggleBtn.classList.remove('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.add('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'false'));
@@ -408,7 +417,7 @@
             
             function toggleAdminMode() {
                 if (!state.isAdmin) {
-                    const password = prompt("Digite a senha de administrador: 123");
+                    const password = prompt("Digite a senha de administrador:");
                     if (password !== "123") { alert("Senha incorreta!"); return; }
                 }
                 state.isAdmin = !state.isAdmin;
@@ -442,6 +451,25 @@
             }
             
             // --- Novas Funções de Edição ---
+            function addNewCard() {
+                const newId = 'card-' + Date.now();
+                const newCard = {
+                    id: newId,
+                    title: 'Novo Tópico',
+                    content: '<p>Comece a editar este conteúdo...</p>'
+                };
+                state.content.push(newCard);
+                render(); // Re-renderiza a UI com o novo card
+                
+                // Rola a página para o novo card e foca no título para edição
+                const newCardElement = document.getElementById(newId);
+                if (newCardElement) {
+                    newCardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        newCardElement.querySelector('h2').focus();
+                    }, 300);
+                }
+            }
 
             function showDeleteConfirmation(id, title) {
                 confirmModal.classList.remove('hidden');
@@ -535,6 +563,7 @@
             // --- EVENT LISTENERS ---
             adminToggleBtn.addEventListener('click', toggleAdminMode);
             saveBtn.addEventListener('click', saveState);
+            addCardBtn.addEventListener('click', addNewCard);
             pinSidebarBtn.addEventListener('click', toggleSidebarPin);
             openSidebarBtn.addEventListener('click', () => {
                 sidebar.classList.remove('-translate-x-full');
