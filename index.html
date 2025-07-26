@@ -130,7 +130,7 @@
                 <!-- Cabeçalho da Página -->
                 <header class="mb-10">
                     <h1 class="header-title text-4xl md:text-5xl font-bold text-white">
-                        Manual Adm <span class="text-blue-400">UNINTA</span>
+                        Manual Administrativo <span class="text-blue-400">UNINTA</span>
                     </h1>
                     <p class="mt-2 text-lg text-gray-400">Guia interativo de procedimentos e informações.</p>
                 </header>
@@ -169,11 +169,15 @@
     
     <!-- Barra de ferramentas flutuante para destaque de texto -->
     <div id="highlight-toolbar">
-        <div class="flex space-x-2">
-            <div class="color-swatch" style="background-color: #FBBF24;" data-color="#FBBF24"></div>
-            <div class="color-swatch" style="background-color: #3B82F6;" data-color="#3B82F6"></div>
-            <div class="color-swatch" style="background-color: #EC4899;" data-color="#EC4899"></div>
-            <div class="color-swatch" style="background-color: #22C55E;" data-color="#22C55E"></div>
+        <div class="flex space-x-2 items-center">
+            <div class="color-swatch" style="background-color: #FBBF24;" data-color="#FBBF24" title="Amarelo"></div>
+            <div class="color-swatch" style="background-color: #3B82F6;" data-color="#3B82F6" title="Azul"></div>
+            <div class="color-swatch" style="background-color: #EC4899;" data-color="#EC4899" title="Rosa"></div>
+            <div class="color-swatch" style="background-color: #22C55E;" data-color="#22C55E" title="Verde"></div>
+            <div class="h-5 border-l border-gray-600"></div>
+            <button id="remove-color-btn" class="p-1 text-gray-400 hover:text-white" title="Remover Cor">
+                <i data-lucide="remove-formatting" class="h-5 w-5"></i>
+            </button>
         </div>
     </div>
 
@@ -459,13 +463,17 @@
             }
 
             function setupHighlightToolbar() {
+                // Impede que a barra de ferramentas roube o foco, o que desfaz a seleção de texto.
+                highlightToolbar.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                });
+
                 document.addEventListener('mouseup', () => {
                     const selection = window.getSelection();
                     if (!selection.isCollapsed && state.isAdmin) {
                         const range = selection.getRangeAt(0);
                         const rect = range.getBoundingClientRect();
                         
-                        // Verifica se a seleção está dentro de um elemento editável
                         let parent = range.commonAncestorContainer;
                         if (parent.nodeType !== Node.ELEMENT_NODE) {
                             parent = parent.parentNode;
@@ -483,11 +491,19 @@
                 });
 
                 highlightToolbar.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('color-swatch')) {
-                        const color = e.target.dataset.color;
-                        document.execCommand('styleWithCSS', false, true);
+                    const swatch = e.target.closest('.color-swatch');
+                    const removeBtn = e.target.closest('#remove-color-btn');
+
+                    if (swatch) {
+                        const color = swatch.dataset.color;
                         document.execCommand('foreColor', false, color);
-                        document.execCommand('styleWithCSS', false, false);
+                    } else if (removeBtn) {
+                        // removeFormat remove toda a formatação (negrito, etc.), mas é o mais confiável para remover a cor.
+                        document.execCommand('removeFormat', false, null);
+                    }
+                    
+                    // Esconde a barra de ferramentas após a ação
+                    if (swatch || removeBtn) {
                         highlightToolbar.style.display = 'none';
                     }
                 });
@@ -546,7 +562,8 @@
             // --- INICIALIZAÇÃO ---
             loadState();
             setupHighlightToolbar();
+            lucide.createIcons();
         });
     </script>
 </body>
-</html>
+</ht
