@@ -90,6 +90,18 @@
         .color-swatch:hover {
             transform: scale(1.2);
         }
+        /* Estilos para minimizar card */
+        .card-content-wrapper {
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out 0.1s;
+            overflow: hidden;
+            max-height: 2000px; /* Altura grande o suficiente */
+            opacity: 1;
+        }
+        .card-content-wrapper.collapsed {
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.5s ease-in-out, opacity 0.2s ease-in-out;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -113,9 +125,19 @@
                     </button>
                 </div>
                 <!-- Navegação -->
-                <nav id="menu-nav-links" class="flex-1 overflow-y-auto custom-scrollbar">
-                    <!-- Links serão injetados aqui -->
-                </nav>
+                <nav id="menu-nav-links" class="flex-1 overflow-y-auto custom-scrollbar"></nav>
+                <!-- Controles de Importar/Exportar -->
+                <div class="mt-4 pt-4 border-t border-gray-700 space-y-2">
+                    <button id="import-btn" class="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700/50 rounded-md hover:bg-gray-700">
+                        <i data-lucide="upload" class="h-4 w-4 mr-2"></i>
+                        Importar Dados
+                    </button>
+                    <button id="export-btn" class="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700/50 rounded-md hover:bg-gray-700">
+                        <i data-lucide="download" class="h-4 w-4 mr-2"></i>
+                        Exportar Dados
+                    </button>
+                    <input type="file" id="import-file-input" class="hidden" accept=".json">
+                </div>
             </div>
         </aside>
 
@@ -129,10 +151,17 @@
             <div class="container mx-auto px-6 py-8">
                 <!-- Cabeçalho da Página -->
                 <header class="mb-10">
-                    <h1 class="header-title text-4xl md:text-5xl font-bold text-white">
-                        Manual Administrativo <span class="text-blue-400">UNINTA</span>
-                    </h1>
-                    <p class="mt-2 text-lg text-gray-400">Guia interativo de procedimentos e informações.</p>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h1 class="header-title text-4xl md:text-5xl font-bold text-white">
+                                Manual Administrativo <span class="text-blue-400">UNINTA</span>
+                            </h1>
+                            <p class="mt-2 text-lg text-gray-400">Guia interativo de procedimentos e informações.</p>
+                        </div>
+                        <button id="minimize-all-btn" class="p-2 text-gray-400 bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg hover:text-white hover:bg-gray-700" title="Minimizar/Expandir Todos">
+                            <i data-lucide="chevrons-up-down"></i>
+                        </button>
+                    </div>
                 </header>
 
                 <!-- Seção de Tópicos Fixados -->
@@ -195,11 +224,16 @@
                 <div class="flex justify-between items-start">
                     <div class="prose prose-invert max-w-none w-full text-gray-300">
                         <h2 class="text-2xl font-bold text-white mb-4" data-editable></h2>
-                        <div data-editable></div>
+                        <div class="card-content-wrapper">
+                            <div data-editable></div>
+                        </div>
                     </div>
                     <div class="flex flex-col items-center space-y-2 ml-4 flex-shrink-0">
                         <button class="pin-btn text-gray-500 hover:text-blue-400 transition-colors p-1" title="Fixar Tópico no Topo">
                             <i data-lucide="bookmark-plus" class="h-5 w-5"></i>
+                        </button>
+                        <button class="clone-btn hidden text-gray-500 hover:text-green-400 transition-colors p-1" title="Clonar Card">
+                            <i data-lucide="copy" class="h-5 w-5"></i>
                         </button>
                         <button class="delete-btn hidden text-gray-500 hover:text-red-400 transition-colors p-1" title="Excluir Card">
                             <i data-lucide="trash-2" class="h-5 w-5"></i>
@@ -235,7 +269,7 @@
             ];
 
             // --- ESTADO DA APLICAÇÃO ---
-            let state = { isAdmin: false, content: [], pinnedItems: [], isSidebarPinned: true };
+            let state = { isAdmin: false, content: [], pinnedItems: [], isSidebarPinned: true, areCardsMinimized: false };
 
             // --- ELEMENTOS DO DOM ---
             const appContainer = document.getElementById('app-container');
@@ -259,10 +293,14 @@
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
             const highlightToolbar = document.getElementById('highlight-toolbar');
+            const minimizeAllBtn = document.getElementById('minimize-all-btn');
+
+            const importBtn = document.getElementById('import-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const importFileInput = document.getElementById('import-file-input');
 
             // --- FUNÇÕES ---
-            function saveState() {
-                // Atualiza o estado a partir do DOM antes de salvar
+            function updateStateFromDOM() {
                 const currentOrderIds = Array.from(contentSections.children).map(sectionEl => sectionEl.dataset.id);
                 const contentMap = new Map(state.content.map(item => [item.id, item]));
 
@@ -280,7 +318,9 @@
                     }
                 });
                 state.content = reorderedContent;
+            }
 
+            function saveState() {
                 localStorage.setItem('unintaManualState', JSON.stringify({ content: state.content, pinnedItems: state.pinnedItems }));
                 
                 saveBtn.innerHTML = `<i data-lucide="check-circle" class="mr-2 h-5 w-5"></i> Salvo!`;
@@ -358,7 +398,12 @@
                         const contentEl = sectionEl.querySelector('div[data-editable]');
                         contentEl.innerHTML = item.content;
 
+                        if (state.areCardsMinimized) {
+                            sectionEl.querySelector('.card-content-wrapper').classList.add('collapsed');
+                        }
+
                         sectionEl.querySelector('.pin-btn').addEventListener('click', () => toggleContentPin(item.id));
+                        sectionEl.querySelector('.clone-btn').addEventListener('click', () => cloneCard(item.id));
                         sectionEl.querySelector('.delete-btn').addEventListener('click', () => showDeleteConfirmation(item.id, item.title));
                         
                         // Evento para atualizar o título dinamicamente
@@ -416,12 +461,14 @@
                 const editableElements = document.querySelectorAll('[data-editable]');
                 const sections = document.querySelectorAll('#content-sections section');
                 const deleteButtons = document.querySelectorAll('.delete-btn');
+                const cloneButtons = document.querySelectorAll('.clone-btn');
 
                 if (state.isAdmin) {
                     saveBtn.classList.remove('hidden');
                     addCardBtn.classList.remove('hidden');
                     adminToggleBtn.classList.add('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.remove('hidden'));
+                    cloneButtons.forEach(btn => btn.classList.remove('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'true'));
                     sections.forEach(sec => sec.setAttribute('draggable', 'true'));
                 } else {
@@ -429,6 +476,7 @@
                     addCardBtn.classList.add('hidden');
                     adminToggleBtn.classList.remove('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.add('hidden'));
+                    cloneButtons.forEach(btn => btn.classList.add('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'false'));
                     sections.forEach(sec => sec.setAttribute('draggable', 'false'));
                 }
@@ -436,7 +484,7 @@
             
             function toggleAdminMode() {
                 if (!state.isAdmin) {
-                    const password = prompt("Digite a senha de administrador: 123");
+                    const password = prompt("Digite a senha de administrador:");
                     if (password !== "123") { alert("Senha incorreta!"); return; }
                 }
                 state.isAdmin = !state.isAdmin;
@@ -488,6 +536,21 @@
                         newCardElement.querySelector('h2').focus();
                     }, 300);
                 }
+            }
+
+            function cloneCard(id) {
+                const originalCardIndex = state.content.findIndex(item => item.id === id);
+                if (originalCardIndex === -1) return;
+
+                const originalCard = state.content[originalCardIndex];
+                const newCard = {
+                    ...originalCard, // Copia todo o conteúdo
+                    id: 'card-' + Date.now(),
+                    title: `Cópia de ${originalCard.title}`
+                };
+
+                state.content.splice(originalCardIndex + 1, 0, newCard);
+                render();
             }
 
             function showDeleteConfirmation(id, title) {
@@ -556,6 +619,61 @@
                 });
             }
 
+            function toggleMinimizeAllCards() {
+                state.areCardsMinimized = !state.areCardsMinimized;
+                const wrappers = document.querySelectorAll('.card-content-wrapper');
+                wrappers.forEach(wrapper => {
+                    wrapper.classList.toggle('collapsed', state.areCardsMinimized);
+                });
+            }
+
+            function handleExport() {
+                updateStateFromDOM(); // Garante que o estado está atualizado com as últimas edições
+                const dataToExport = {
+                    content: state.content,
+                    pinnedItems: state.pinnedItems
+                };
+                const dataStr = JSON.stringify(dataToExport, null, 2);
+                const dataBlob = new Blob([dataStr], {type: "application/json"});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'manual-uninta-dados.json';
+                link.click();
+                URL.revokeObjectURL(url);
+            }
+
+            function handleImport() {
+                importFileInput.click();
+            }
+
+            function processImportedFile(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (importedData.content && Array.isArray(importedData.content)) {
+                            state.content = importedData.content;
+                            state.pinnedItems = importedData.pinnedItems || [];
+                            saveState();
+                            render();
+                            alert('Dados importados com sucesso!');
+                        } else {
+                            alert('Arquivo inválido. O formato dos dados não é o esperado.');
+                        }
+                    } catch (error) {
+                        alert('Erro ao ler o arquivo. Verifique se é um arquivo JSON válido.');
+                        console.error("Erro ao importar:", error);
+                    }
+                };
+                reader.readAsText(file);
+                // Reseta o valor para poder importar o mesmo arquivo novamente
+                importFileInput.value = '';
+            }
+
             // --- Drag & Drop ---
             let draggedItem = null;
             contentSections.addEventListener('dragstart', (e) => {
@@ -580,6 +698,7 @@
             contentSections.addEventListener('drop', (e) => { 
                 e.preventDefault(); 
                 if (state.isAdmin) { 
+                    updateStateFromDOM();
                     saveState(); 
                     render(); 
                 } 
@@ -587,9 +706,13 @@
 
             // --- EVENT LISTENERS ---
             adminToggleBtn.addEventListener('click', toggleAdminMode);
-            saveBtn.addEventListener('click', saveState);
+            saveBtn.addEventListener('click', () => {
+                updateStateFromDOM();
+                saveState();
+            });
             addCardBtn.addEventListener('click', addNewCard);
             pinSidebarBtn.addEventListener('click', toggleSidebarPin);
+            minimizeAllBtn.addEventListener('click', toggleMinimizeAllCards);
             openSidebarBtn.addEventListener('click', () => {
                 sidebar.classList.remove('-translate-x-full');
             });
@@ -612,6 +735,11 @@
                 confirmModal.classList.add('hidden');
                 confirmModal.classList.remove('flex');
             });
+
+            // Listeners de Importar/Exportar
+            importBtn.addEventListener('click', handleImport);
+            exportBtn.addEventListener('click', handleExport);
+            importFileInput.addEventListener('change', processImportedFile);
 
             // --- INICIALIZAÇÃO ---
             loadState();
