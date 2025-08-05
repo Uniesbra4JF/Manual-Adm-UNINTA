@@ -176,6 +176,10 @@
             <i data-lucide="save" class="mr-2 h-5 w-5"></i>
             Salvar
         </button>
+        <button id="reset-btn" class="hidden items-center px-4 py-2 bg-red-600 text-white font-semibold rounded-full shadow-lg hover:bg-red-700">
+            <i data-lucide="rotate-ccw" class="mr-2 h-5 w-5"></i>
+            Resetar
+        </button>
     </div>
     
     <!-- Botão para Adicionar Novo Card -->
@@ -268,6 +272,7 @@
             const adminToggleBtn = document.getElementById('admin-toggle-btn');
             const saveBtn = document.getElementById('save-btn');
             const addCardBtn = document.getElementById('add-card-btn');
+            const resetBtn = document.getElementById('reset-btn');
             
             const sidebar = document.getElementById('sidebar');
             const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
@@ -434,6 +439,7 @@
                 if (state.isAdmin) {
                     saveBtn.classList.remove('hidden');
                     addCardBtn.classList.remove('hidden');
+                    resetBtn.classList.remove('hidden');
                     adminToggleBtn.classList.add('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.remove('hidden'));
                     cloneButtons.forEach(btn => btn.classList.remove('hidden'));
@@ -442,6 +448,7 @@
                 } else {
                     saveBtn.classList.add('hidden');
                     addCardBtn.classList.add('hidden');
+                    resetBtn.classList.add('hidden');
                     adminToggleBtn.classList.remove('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.add('hidden'));
                     cloneButtons.forEach(btn => btn.classList.add('hidden'));
@@ -543,6 +550,34 @@
                 saveState();
                 render();
             }
+            function resetAllData() {
+                const password = prompt("Digite a senha de administrador para resetar todos os dados:");
+                if (password !== "123") {
+                    alert("Senha incorreta! Ação cancelada.");
+                    return;
+                }
+                
+                if (confirm("Tem certeza que deseja resetar todos os dados? Esta ação não pode ser desfeita.")) {
+                    // Limpa o localStorage
+                    localStorage.removeItem('unintaManualState');
+                    localStorage.removeItem('sidebarPinned');
+                    
+                    // Reseta o estado para os dados iniciais
+                    state.content = [...initialData];
+                    state.pinnedItems = [];
+                    state.isAdmin = false;
+                    state.isSidebarPinned = true;
+                    state.areCardsMinimized = false;
+                    
+                    // Salva o estado inicial
+                    saveState();
+                    
+                    // Renderiza novamente
+                    render();
+                    
+                    alert("Dados resetados com sucesso!");
+                }
+            }
             function setupHighlightToolbar() {
                 // Impede que a barra de ferramentas roube o foco, o que desfaz a seleção de texto.
                 highlightToolbar.addEventListener('mousedown', (e) => {
@@ -561,7 +596,7 @@
                         if (parent.closest('[contenteditable="true"]')) {
                             highlightToolbar.style.display = 'flex';
                             highlightToolbar.style.left = `${rect.left + window.scrollX + rect.width / 2 - highlightToolbar.offsetWidth / 2}px`;
-                            highlightToolbar.style.top = `${rect.top + window.scrollY - highlightToolbar.offsetHeight - 8}px`;
+                            highlightToolbar.style.top = `${rect.top + window.scrollY - highlight-toolbar.offsetHeight - 8}px`;
                         } else {
                            highlightToolbar.style.display = 'none';
                         }
@@ -672,6 +707,7 @@
                 saveState();
             });
             addCardBtn.addEventListener('click', addNewCard);
+            resetBtn.addEventListener('click', resetAllData);
             pinSidebarBtn.addEventListener('click', toggleSidebarPin);
             minimizeAllBtn.addEventListener('click', toggleMinimizeAllCards);
             openSidebarBtn.addEventListener('click', () => {
