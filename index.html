@@ -152,9 +152,6 @@
                             </h1>
                             <p class="mt-2 text-lg text-gray-400">Guia interativo de procedimentos e informações.</p>
                         </div>
-                        <button id="minimize-all-btn" class="p-2 text-gray-400 bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg hover:text-white hover:bg-gray-700" title="Minimizar/Expandir Todos">
-                            <i data-lucide="chevrons-up-down"></i>
-                        </button>
                     </div>
                 </header>
                 <!-- Seção de Tópicos Fixados -->
@@ -165,6 +162,11 @@
             </div>
         </main>
     </div>
+    <!-- Botão Minimizar/Expandir Todos Fixo -->
+    <button id="minimize-all-btn" class="p-2 text-gray-400 bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg hover:text-white hover:bg-gray-700 fixed top-4 right-4 z-30" title="Minimizar/Expandir Todos">
+        <i data-lucide="chevrons-up-down"></i>
+    </button>
+    
     <!-- Controles do ADM -->
     <div id="admin-controls" class="fixed bottom-5 z-20 flex items-center space-x-3 transition-all duration-300 ease-in-out">
         <button id="admin-toggle-btn" class="p-3 bg-gray-800 rounded-full shadow-lg text-gray-300 hover:bg-gray-700">
@@ -180,7 +182,6 @@
     <button id="add-card-btn" class="hidden fixed bottom-5 right-5 z-20 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-110">
         <i data-lucide="plus"></i>
     </button>
-
     <!-- Modal de Confirmação para Exclusão -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center">
         <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm">
@@ -206,7 +207,6 @@
             </button>
         </div>
     </div>
-
     <!-- Templates -->
     <template id="section-template">
         <section class="bg-gray-800/70 backdrop-blur-sm border border-gray-700/80 rounded-xl shadow-lg transition-all duration-300 ease-in-out" draggable="false">
@@ -532,6 +532,12 @@
                 state.content = state.content.filter(item => item.id !== id);
                 // Remove dos fixados também, se estiver lá
                 state.pinnedItems = state.pinnedItems.filter(pinnedId => pinnedId !== id);
+                
+                // Remove o elemento do DOM
+                const cardElement = document.getElementById(id);
+                if (cardElement) {
+                    cardElement.remove();
+                }
                 
                 // Salva e renderiza novamente
                 saveState();
