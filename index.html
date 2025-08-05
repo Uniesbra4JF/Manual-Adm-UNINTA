@@ -10,12 +10,10 @@
     
     <!-- Biblioteca de Ícones (Lucide) -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <!-- Fontes do Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-
     <style>
         /* Estilo base com a nova paleta dark */
         body {
@@ -105,13 +103,11 @@
     </style>
 </head>
 <body class="min-h-screen">
-
     <!-- Tela de Carregamento -->
     <div id="loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#111827] transition-opacity duration-500">
         <div class="text-blue-400 text-2xl font-bold">UNINTA</div>
         <p class="text-gray-400 mt-2">Carregando manual...</p>
     </div>
-
     <!-- Container principal que gerencia o layout da sidebar -->
     <div id="app-container" class="opacity-0 transition-opacity duration-500">
         <!-- Sidebar -->
@@ -140,12 +136,10 @@
                 </div>
             </div>
         </aside>
-
         <!-- Botão para abrir a sidebar quando ela está oculta -->
         <button id="open-sidebar-btn" class="fixed top-4 left-4 z-30 p-2 text-gray-300 bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg hover:bg-gray-700 transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none">
             <i data-lucide="menu"></i>
         </button>
-
         <!-- Conteúdo Principal -->
         <main id="main-content" class="transition-all duration-300 ease-in-out">
             <div class="container mx-auto px-6 py-8">
@@ -163,7 +157,6 @@
                         </button>
                     </div>
                 </header>
-
                 <!-- Seção de Tópicos Fixados -->
                 <div id="pinned-container" class="mb-10"></div>
                 
@@ -172,7 +165,6 @@
             </div>
         </main>
     </div>
-
     <!-- Controles do ADM -->
     <div id="admin-controls" class="fixed bottom-5 z-20 flex items-center space-x-3 transition-all duration-300 ease-in-out">
         <button id="admin-toggle-btn" class="p-3 bg-gray-800 rounded-full shadow-lg text-gray-300 hover:bg-gray-700">
@@ -188,7 +180,6 @@
     <button id="add-card-btn" class="hidden fixed bottom-5 right-5 z-20 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-110">
         <i data-lucide="plus"></i>
     </button>
-
 
     <!-- Modal de Confirmação para Exclusão -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center">
@@ -216,7 +207,6 @@
         </div>
     </div>
 
-
     <!-- Templates -->
     <template id="section-template">
         <section class="bg-gray-800/70 backdrop-blur-sm border border-gray-700/80 rounded-xl shadow-lg transition-all duration-300 ease-in-out" draggable="false">
@@ -243,7 +233,6 @@
             </div>
         </section>
     </template>
-
     <template id="pinned-item-template">
         <div class="bg-blue-600/80 backdrop-blur-sm border border-blue-500 text-white rounded-lg p-4 shadow-lg flex justify-between items-center">
             <a href="#" class="font-semibold hover:underline"></a>
@@ -252,7 +241,6 @@
             </button>
         </div>
     </template>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- DADOS INICIAIS ---
@@ -267,10 +255,8 @@
                 { id: 'bolsa-cebas', title: '4. Bolsa CEBAS', content: `<h3 class="font-semibold text-lg mb-2">Critérios:</h3><ul class="list-disc pl-5 space-y-1 mb-4"><li>Não possuir diploma superior.</li><li>Renda familiar per capita de até 1,5 salário mínimo.</li><li>Ensino fundamental e médio em escola pública ou como bolsista integral.</li><li>Matrícula ativa.</li></ul><div class="p-3 bg-blue-900/20 border-l-4 border-blue-700"><strong class="text-blue-300">Como Solicitar:</strong> Enviar documentação para <a href="mailto:bolsas@uninta.edu.br" class="font-medium text-blue-400">bolsas@uninta.edu.br</a>.</div>`},
                 { id: 'apresentacao-candidato', title: '5. Modelo de Apresentação', content: `<blockquote class="p-4 my-4 border-l-4 border-gray-600 bg-gray-800/80"><p class="text-md italic leading-relaxed">"Bom dia, meu nome é José e estou aqui para ajudá-lo no polo da Uninta..."</p></blockquote>`}
             ];
-
             // --- ESTADO DA APLICAÇÃO ---
             let state = { isAdmin: false, content: [], pinnedItems: [], isSidebarPinned: true, areCardsMinimized: false };
-
             // --- ELEMENTOS DO DOM ---
             const appContainer = document.getElementById('app-container');
             const mainContent = document.getElementById('main-content');
@@ -287,23 +273,18 @@
             const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
             const openSidebarBtn = document.getElementById('open-sidebar-btn');
             const menuNavLinks = document.getElementById('menu-nav-links');
-
             const confirmModal = document.getElementById('confirm-modal');
             const modalConfirmBtn = document.getElementById('modal-confirm-btn');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
-
             const highlightToolbar = document.getElementById('highlight-toolbar');
             const minimizeAllBtn = document.getElementById('minimize-all-btn');
-
             const importBtn = document.getElementById('import-btn');
             const exportBtn = document.getElementById('export-btn');
             const importFileInput = document.getElementById('import-file-input');
-
             // --- FUNÇÕES ---
             function updateStateFromDOM() {
                 const currentOrderIds = Array.from(contentSections.children).map(sectionEl => sectionEl.dataset.id);
                 const contentMap = new Map(state.content.map(item => [item.id, item]));
-
                 const reorderedContent = currentOrderIds.map(id => {
                     const sectionEl = document.getElementById(id);
                     const title = sectionEl.querySelector('h2').innerText;
@@ -311,7 +292,6 @@
                     const originalItem = contentMap.get(id);
                     return { ...originalItem, title, content };
                 });
-
                 state.content.forEach(item => {
                     if (!reorderedContent.find(rc => rc.id === item.id)) {
                         reorderedContent.push(item);
@@ -319,7 +299,6 @@
                 });
                 state.content = reorderedContent;
             }
-
             function saveState() {
                 localStorage.setItem('unintaManualState', JSON.stringify({ content: state.content, pinnedItems: state.pinnedItems }));
                 
@@ -330,7 +309,6 @@
                     lucide.createIcons();
                 }, 2000);
             }
-
             function loadState() {
                 const savedState = localStorage.getItem('unintaManualState');
                 if (savedState) {
@@ -344,9 +322,7 @@
                 
                 const savedSidebarPin = localStorage.getItem('sidebarPinned');
                 state.isSidebarPinned = window.innerWidth < 1024 ? false : (savedSidebarPin === null ? true : JSON.parse(savedSidebarPin));
-
                 render();
-
                 // Esconde o loader e mostra o conteúdo
                 const loader = document.getElementById('loader');
                 
@@ -357,13 +333,11 @@
                     setTimeout(() => loader.style.display = 'none', 500);
                 }, 100); 
             }
-
             function render() {
                 contentSections.innerHTML = '';
                 pinnedContainer.innerHTML = '';
                 menuNavLinks.innerHTML = '';
                 const contentMap = new Map(state.content.map(item => [item.id, item]));
-
                 if (state.pinnedItems.length > 0) {
                     const pinnedHeader = document.createElement('h3');
                     pinnedHeader.className = "text-xl font-bold text-white mb-4 flex items-center";
@@ -384,7 +358,6 @@
                     });
                     pinnedContainer.appendChild(pinnedGrid);
                 }
-
                 state.content.forEach(item => {
                     if (!state.pinnedItems.includes(item.id)) {
                         const sectionClone = sectionTemplate.content.cloneNode(true);
@@ -397,11 +370,9 @@
                         
                         const contentEl = sectionEl.querySelector('div[data-editable]');
                         contentEl.innerHTML = item.content;
-
                         if (state.areCardsMinimized) {
                             sectionEl.querySelector('.card-content-wrapper').classList.add('collapsed');
                         }
-
                         sectionEl.querySelector('.pin-btn').addEventListener('click', () => toggleContentPin(item.id));
                         sectionEl.querySelector('.clone-btn').addEventListener('click', () => cloneCard(item.id));
                         sectionEl.querySelector('.delete-btn').addEventListener('click', () => showDeleteConfirmation(item.id, item.title));
@@ -420,7 +391,6 @@
                                 sidebarLink.textContent = newTitle;
                             }
                         });
-
                         contentSections.appendChild(sectionClone);
                     }
                     const menuLink = document.createElement('a');
@@ -456,13 +426,11 @@
                 saveState();
                 render();
             }
-
             function updateAdminUI() {
                 const editableElements = document.querySelectorAll('[data-editable]');
                 const sections = document.querySelectorAll('#content-sections section');
                 const deleteButtons = document.querySelectorAll('.delete-btn');
                 const cloneButtons = document.querySelectorAll('.clone-btn');
-
                 if (state.isAdmin) {
                     saveBtn.classList.remove('hidden');
                     addCardBtn.classList.remove('hidden');
@@ -490,7 +458,6 @@
                 state.isAdmin = !state.isAdmin;
                 updateAdminUI();
             }
-
             function updateSidebarUI() {
                 const pinIcon = pinSidebarBtn.querySelector('i');
                 if (state.isSidebarPinned) {
@@ -510,7 +477,6 @@
                 }
                 lucide.createIcons();
             }
-
             function toggleSidebarPin() {
                 state.isSidebarPinned = !state.isSidebarPinned;
                 localStorage.setItem('sidebarPinned', state.isSidebarPinned);
@@ -537,30 +503,30 @@
                     }, 300);
                 }
             }
-
             function cloneCard(id) {
                 const originalCardIndex = state.content.findIndex(item => item.id === id);
                 if (originalCardIndex === -1) return;
-
                 const originalCard = state.content[originalCardIndex];
                 const newCard = {
                     ...originalCard, // Copia todo o conteúdo
                     id: 'card-' + Date.now(),
                     title: `Cópia de ${originalCard.title}`
                 };
-
                 state.content.splice(originalCardIndex + 1, 0, newCard);
                 render();
             }
-
             function showDeleteConfirmation(id, title) {
-                confirmModal.classList.remove('hidden');
-                confirmModal.classList.add('flex');
+                // Atualiza o título e mensagem do modal
+                document.getElementById('modal-title').textContent = 'Confirmar Exclusão';
+                document.getElementById('modal-message').textContent = `Você tem certeza que deseja excluir o card "${title}"? Esta ação não pode ser desfeita.`;
                 
                 // Armazena o ID para usar na confirmação
-                modalConfirmBtn.dataset.deleteId = id;
+                modalConfirmBtn.setAttribute('data-delete-id', id);
+                
+                // Exibe o modal
+                confirmModal.classList.remove('hidden');
+                confirmModal.classList.add('flex');
             }
-
             function deleteCard(id) {
                 // Remove o card do estado
                 state.content = state.content.filter(item => item.id !== id);
@@ -571,13 +537,11 @@
                 saveState();
                 render();
             }
-
             function setupHighlightToolbar() {
                 // Impede que a barra de ferramentas roube o foco, o que desfaz a seleção de texto.
                 highlightToolbar.addEventListener('mousedown', (e) => {
                     e.preventDefault();
                 });
-
                 document.addEventListener('mouseup', () => {
                     const selection = window.getSelection();
                     if (!selection.isCollapsed && state.isAdmin) {
@@ -599,11 +563,9 @@
                         highlightToolbar.style.display = 'none';
                     }
                 });
-
                 highlightToolbar.addEventListener('click', (e) => {
                     const swatch = e.target.closest('.color-swatch');
                     const removeBtn = e.target.closest('#remove-color-btn');
-
                     if (swatch) {
                         const color = swatch.dataset.color;
                         document.execCommand('foreColor', false, color);
@@ -618,7 +580,6 @@
                     }
                 });
             }
-
             function toggleMinimizeAllCards() {
                 state.areCardsMinimized = !state.areCardsMinimized;
                 const wrappers = document.querySelectorAll('.card-content-wrapper');
@@ -626,7 +587,6 @@
                     wrapper.classList.toggle('collapsed', state.areCardsMinimized);
                 });
             }
-
             function handleExport() {
                 updateStateFromDOM(); // Garante que o estado está atualizado com as últimas edições
                 const dataToExport = {
@@ -642,15 +602,12 @@
                 link.click();
                 URL.revokeObjectURL(url);
             }
-
             function handleImport() {
                 importFileInput.click();
             }
-
             function processImportedFile(event) {
                 const file = event.target.files[0];
                 if (!file) return;
-
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
@@ -673,7 +630,6 @@
                 // Reseta o valor para poder importar o mesmo arquivo novamente
                 importFileInput.value = '';
             }
-
             // --- Drag & Drop ---
             let draggedItem = null;
             contentSections.addEventListener('dragstart', (e) => {
@@ -703,7 +659,6 @@
                     render(); 
                 } 
             });
-
             // --- EVENT LISTENERS ---
             adminToggleBtn.addEventListener('click', toggleAdminMode);
             saveBtn.addEventListener('click', () => {
@@ -726,21 +681,25 @@
             modalCancelBtn.addEventListener('click', () => {
                 confirmModal.classList.add('hidden');
                 confirmModal.classList.remove('flex');
+                // Limpa o dataset para evitar problemas
+                modalConfirmBtn.removeAttribute('data-delete-id');
             });
+            
             modalConfirmBtn.addEventListener('click', () => {
-                const idToDelete = modalConfirmBtn.dataset.deleteId;
+                const idToDelete = modalConfirmBtn.getAttribute('data-delete-id');
                 if (idToDelete) {
                     deleteCard(idToDelete);
                 }
                 confirmModal.classList.add('hidden');
                 confirmModal.classList.remove('flex');
+                // Limpa o dataset
+                modalConfirmBtn.removeAttribute('data-delete-id');
             });
-
+            
             // Listeners de Importar/Exportar
             importBtn.addEventListener('click', handleImport);
             exportBtn.addEventListener('click', handleExport);
             importFileInput.addEventListener('change', processImportedFile);
-
             // --- INICIALIZAÇÃO ---
             loadState();
             setupHighlightToolbar();
