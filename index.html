@@ -100,6 +100,24 @@
             opacity: 0;
             transition: max-height 0.5s ease-in-out, opacity 0.2s ease-in-out;
         }
+        /* Notificação de cópia */
+        .copy-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .copy-notification.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -211,6 +229,13 @@
             </button>
         </div>
     </div>
+    
+    <!-- Notificação de cópia -->
+    <div id="copy-notification" class="copy-notification">
+        <i data-lucide="check" class="inline mr-2"></i>
+        Conteúdo copiado para a área de transferência!
+    </div>
+    
     <!-- Templates -->
     <template id="section-template">
         <section class="bg-gray-800/70 backdrop-blur-sm border border-gray-700/80 rounded-xl shadow-lg transition-all duration-300 ease-in-out" draggable="false">
@@ -225,6 +250,9 @@
                     <div class="flex flex-col items-center space-y-2 ml-4 flex-shrink-0">
                         <button class="pin-btn text-gray-500 hover:text-blue-400 transition-colors p-1" title="Fixar Tópico no Topo">
                             <i data-lucide="bookmark-plus" class="h-5 w-5"></i>
+                        </button>
+                        <button class="copy-btn hidden text-gray-500 hover:text-yellow-400 transition-colors p-1" title="Copiar Texto">
+                            <i data-lucide="copy" class="h-5 w-5"></i>
                         </button>
                         <button class="clone-btn hidden text-gray-500 hover:text-green-400 transition-colors p-1" title="Clonar Card">
                             <i data-lucide="copy" class="h-5 w-5"></i>
@@ -274,6 +302,7 @@
             const saveBtn = document.getElementById('save-btn');
             const addCardBtn = document.getElementById('add-card-btn');
             const resetBtn = document.getElementById('reset-btn');
+            const copyNotification = document.getElementById('copy-notification');
             
             const sidebar = document.getElementById('sidebar');
             const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
@@ -380,6 +409,16 @@
                             sectionEl.querySelector('.card-content-wrapper').classList.add('collapsed');
                         }
                         sectionEl.querySelector('.pin-btn').addEventListener('click', () => toggleContentPin(item.id));
+                        
+                        // Configuração do botão de cópia
+                        const copyBtn = sectionEl.querySelector('.copy-btn');
+                        copyBtn.setAttribute('data-card-id', item.id);
+                        copyBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const cardId = e.currentTarget.getAttribute('data-card-id');
+                            copyCardContent(cardId);
+                        });
+                        
                         sectionEl.querySelector('.clone-btn').addEventListener('click', () => cloneCard(item.id));
                         
                         // Configuração do botão de exclusão
@@ -445,6 +484,7 @@
                 const sections = document.querySelectorAll('#content-sections section');
                 const deleteButtons = document.querySelectorAll('.delete-btn');
                 const cloneButtons = document.querySelectorAll('.clone-btn');
+                const copyButtons = document.querySelectorAll('.copy-btn');
                 if (state.isAdmin) {
                     saveBtn.classList.remove('hidden');
                     addCardBtn.classList.remove('hidden');
@@ -452,6 +492,7 @@
                     adminToggleBtn.classList.add('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.remove('hidden'));
                     cloneButtons.forEach(btn => btn.classList.remove('hidden'));
+                    copyButtons.forEach(btn => btn.classList.remove('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'true'));
                     sections.forEach(sec => sec.setAttribute('draggable', 'true'));
                 } else {
@@ -461,6 +502,7 @@
                     adminToggleBtn.classList.remove('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.add('hidden'));
                     cloneButtons.forEach(btn => btn.classList.add('hidden'));
+                    copyButtons.forEach(btn => btn.classList.add('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'false'));
                     sections.forEach(sec => sec.setAttribute('draggable', 'false'));
                 }
@@ -563,6 +605,31 @@
                 // Salva e renderiza novamente
                 saveState();
                 render();
+            }
+            function copyCardContent(cardId) {
+                const card = state.content.find(item => item.id === cardId);
+                if (!card) return;
+                
+                // Extrai o texto do título e conteúdo
+                const titleText = card.title;
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = card.content;
+                const contentText = tempDiv.textContent || tempDiv.innerText || '';
+                
+                // Combina título e conteúdo
+                const fullText = `${titleText}\n\n${contentText}`;
+                
+                // Copia para a área de transferência
+                navigator.clipboard.writeText(fullText).then(() => {
+                    // Exibe notificação de sucesso
+                    copyNotification.classList.add('show');
+                    setTimeout(() => {
+                        copyNotification.classList.remove('show');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Erro ao copiar texto: ', err);
+                    alert('Não foi possível copiar o texto. Tente novamente.');
+                });
             }
             function resetAllData() {
                 const password = prompt("Digite a senha de administrador para resetar todos os dados:");
