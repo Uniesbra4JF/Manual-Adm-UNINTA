@@ -261,6 +261,7 @@
             ];
             // --- ESTADO DA APLICAÇÃO ---
             let state = { isAdmin: false, content: [], pinnedItems: [], isSidebarPinned: true, areCardsMinimized: false };
+            let cardToDelete = null; // Variável para armazenar o ID do card a ser excluído
             // --- ELEMENTOS DO DOM ---
             const appContainer = document.getElementById('app-container');
             const mainContent = document.getElementById('main-content');
@@ -380,7 +381,15 @@
                         }
                         sectionEl.querySelector('.pin-btn').addEventListener('click', () => toggleContentPin(item.id));
                         sectionEl.querySelector('.clone-btn').addEventListener('click', () => cloneCard(item.id));
-                        sectionEl.querySelector('.delete-btn').addEventListener('click', () => showDeleteConfirmation(item.id, item.title));
+                        
+                        // Configuração do botão de exclusão
+                        const deleteBtn = sectionEl.querySelector('.delete-btn');
+                        deleteBtn.setAttribute('data-card-id', item.id);
+                        deleteBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const cardId = e.currentTarget.getAttribute('data-card-id');
+                            showDeleteConfirmation(cardId, item.title);
+                        });
                         
                         // Evento para atualizar o título dinamicamente
                         titleEl.addEventListener('input', () => {
@@ -523,28 +532,33 @@
                 render();
             }
             function showDeleteConfirmation(id, title) {
+                // Armazena o ID do card a ser excluído na variável global
+                cardToDelete = id;
+                
                 // Atualiza o título e mensagem do modal
                 document.getElementById('modal-title').textContent = 'Confirmar Exclusão';
                 document.getElementById('modal-message').textContent = `Você tem certeza que deseja excluir o card "${title}"? Esta ação não pode ser desfeita.`;
-                
-                // Armazena o ID para usar na confirmação
-                modalConfirmBtn.setAttribute('data-delete-id', id);
                 
                 // Exibe o modal
                 confirmModal.classList.remove('hidden');
                 confirmModal.classList.add('flex');
             }
-            function deleteCard(id) {
+            function deleteCard() {
+                if (!cardToDelete) return;
+                
                 // Remove o card do estado
-                state.content = state.content.filter(item => item.id !== id);
+                state.content = state.content.filter(item => item.id !== cardToDelete);
                 // Remove dos fixados também, se estiver lá
-                state.pinnedItems = state.pinnedItems.filter(pinnedId => pinnedId !== id);
+                state.pinnedItems = state.pinnedItems.filter(pinnedId => pinnedId !== cardToDelete);
                 
                 // Remove o elemento do DOM
-                const cardElement = document.getElementById(id);
+                const cardElement = document.getElementById(cardToDelete);
                 if (cardElement) {
                     cardElement.remove();
                 }
+                
+                // Limpa a variável global
+                cardToDelete = null;
                 
                 // Salva e renderiza novamente
                 saveState();
@@ -723,19 +737,14 @@
             modalCancelBtn.addEventListener('click', () => {
                 confirmModal.classList.add('hidden');
                 confirmModal.classList.remove('flex');
-                // Limpa o dataset para evitar problemas
-                modalConfirmBtn.removeAttribute('data-delete-id');
+                // Limpa a variável global
+                cardToDelete = null;
             });
             
             modalConfirmBtn.addEventListener('click', () => {
-                const idToDelete = modalConfirmBtn.getAttribute('data-delete-id');
-                if (idToDelete) {
-                    deleteCard(idToDelete);
-                }
+                deleteCard();
                 confirmModal.classList.add('hidden');
                 confirmModal.classList.remove('flex');
-                // Limpa o dataset
-                modalConfirmBtn.removeAttribute('data-delete-id');
             });
             
             // Listeners de Importar/Exportar
