@@ -251,7 +251,7 @@
                         <button class="pin-btn text-gray-500 hover:text-blue-400 transition-colors p-1" title="Fixar Tópico no Topo">
                             <i data-lucide="bookmark-plus" class="h-5 w-5"></i>
                         </button>
-                        <button class="copy-btn hidden text-gray-500 hover:text-yellow-400 transition-colors p-1" title="Copiar Texto">
+                        <button class="copy-btn text-gray-500 hover:text-yellow-400 transition-colors p-1" title="Copiar Texto">
                             <i data-lucide="copy" class="h-5 w-5"></i>
                         </button>
                         <button class="clone-btn hidden text-gray-500 hover:text-green-400 transition-colors p-1" title="Clonar Card">
@@ -484,7 +484,7 @@
                 const sections = document.querySelectorAll('#content-sections section');
                 const deleteButtons = document.querySelectorAll('.delete-btn');
                 const cloneButtons = document.querySelectorAll('.clone-btn');
-                const copyButtons = document.querySelectorAll('.copy-btn');
+                
                 if (state.isAdmin) {
                     saveBtn.classList.remove('hidden');
                     addCardBtn.classList.remove('hidden');
@@ -492,7 +492,6 @@
                     adminToggleBtn.classList.add('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.remove('hidden'));
                     cloneButtons.forEach(btn => btn.classList.remove('hidden'));
-                    copyButtons.forEach(btn => btn.classList.remove('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'true'));
                     sections.forEach(sec => sec.setAttribute('draggable', 'true'));
                 } else {
@@ -502,7 +501,6 @@
                     adminToggleBtn.classList.remove('bg-blue-600', 'text-white');
                     deleteButtons.forEach(btn => btn.classList.add('hidden'));
                     cloneButtons.forEach(btn => btn.classList.add('hidden'));
-                    copyButtons.forEach(btn => btn.classList.add('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'false'));
                     sections.forEach(sec => sec.setAttribute('draggable', 'false'));
                 }
@@ -606,18 +604,135 @@
                 saveState();
                 render();
             }
+            
+            // Função para converter HTML para Markdown
+            function htmlToMarkdown(html) {
+                // Cria um elemento temporário para manipular o HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                let markdown = '';
+                
+                // Processa cada nó filho
+                Array.from(tempDiv.childNodes).forEach(node => {
+                    markdown += processNode(node);
+                });
+                
+                return markdown.trim();
+            }
+            
+            // Função recursiva para processar nós
+            function processNode(node, depth = 0) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    return node.textContent;
+                }
+                
+                if (node.nodeType !== Node.ELEMENT_NODE) {
+                    return '';
+                }
+                
+                const tagName = node.tagName.toLowerCase();
+                let result = '';
+                
+                switch (tagName) {
+                    case 'h1':
+                        result = `# ${node.textContent}\n\n`;
+                        break;
+                    case 'h2':
+                        result = `## ${node.textContent}\n\n`;
+                        break;
+                    case 'h3':
+                        result = `### ${node.textContent}\n\n`;
+                        break;
+                    case 'h4':
+                        result = `#### ${node.textContent}\n\n`;
+                        break;
+                    case 'h5':
+                        result = `##### ${node.textContent}\n\n`;
+                        break;
+                    case 'h6':
+                        result = `###### ${node.textContent}\n\n`;
+                        break;
+                    case 'p':
+                        result = `${processChildNodes(node)}\n\n`;
+                        break;
+                    case 'strong':
+                    case 'b':
+                        result = `**${processChildNodes(node)}**`;
+                        break;
+                    case 'em':
+                    case 'i':
+                        result = `*${processChildNodes(node)}*`;
+                        break;
+                    case 'ul':
+                        result = processList(node, false) + '\n';
+                        break;
+                    case 'ol':
+                        result = processList(node, true) + '\n';
+                        break;
+                    case 'li':
+                        result = `- ${processChildNodes(node)}\n`;
+                        break;
+                    case 'blockquote':
+                        result = `> ${processChildNodes(node).trim()}\n\n`;
+                        break;
+                    case 'a':
+                        const href = node.getAttribute('href') || '';
+                        const text = processChildNodes(node);
+                        result = `[${text}](${href})`;
+                        break;
+                    case 'div':
+                        // Processa divs com classes especiais
+                        if (node.classList.contains('bg-red-900/20') || 
+                            node.classList.contains('bg-blue-900/20') || 
+                            node.classList.contains('bg-gray-700/50')) {
+                            result = `\n${processChildNodes(node)}\n`;
+                        } else {
+                            result = processChildNodes(node);
+                        }
+                        break;
+                    default:
+                        // Para outros elementos, apenas processa os filhos
+                        result = processChildNodes(node);
+                }
+                
+                return result;
+            }
+            
+            // Função para processar nós filhos
+            function processChildNodes(node) {
+                let result = '';
+                Array.from(node.childNodes).forEach(child => {
+                    result += processNode(child);
+                });
+                return result;
+            }
+            
+            // Função para processar listas
+            function processList(listNode, isOrdered) {
+                let result = '';
+                const items = listNode.querySelectorAll('li');
+                
+                items.forEach((item, index) => {
+                    const prefix = isOrdered ? `${index + 1}.` : '-';
+                    result += `${prefix} ${processChildNodes(item).trim()}\n`;
+                });
+                
+                return result;
+            }
+            
             function copyCardContent(cardId) {
                 const card = state.content.find(item => item.id === cardId);
                 if (!card) return;
                 
-                // Extrai o texto do título e conteúdo
+                // Extrai o título
                 const titleText = card.title;
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = card.content;
-                const contentText = tempDiv.textContent || tempDiv.innerText || '';
+                
+                // Converte o conteúdo HTML para Markdown
+                const contentMarkdown = htmlToMarkdown(card.content);
                 
                 // Combina título e conteúdo
-                const fullText = `${titleText}\n\n${contentText}`;
+                const fullText = `# ${titleText}\n\n${contentMarkdown}`;
                 
                 // Copia para a área de transferência
                 navigator.clipboard.writeText(fullText).then(() => {
@@ -631,6 +746,7 @@
                     alert('Não foi possível copiar o texto. Tente novamente.');
                 });
             }
+            
             function resetAllData() {
                 const password = prompt("Digite a senha de administrador para resetar todos os dados:");
                 if (password !== "123") {
