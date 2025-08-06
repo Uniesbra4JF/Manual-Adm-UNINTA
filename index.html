@@ -18,8 +18,8 @@
         /* Estilo base com a nova paleta dark */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #111827; /* Fundo principal azul-escuro */
-            color: #d1d5db; /* Texto principal cinza claro */
+            background-color: #0f172a; /* Fundo principal azul-escuro mais profundo */
+            color: #e2e8f0; /* Texto principal cinza mais claro */
             overflow-x: hidden;
         }
         /* Fundo com gradiente sutil e textura */
@@ -30,8 +30,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: radial-gradient(circle at top right, rgba(12, 74, 110, 0.5), transparent 40%),
-                              radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.2), transparent 50%);
+            background-image: 
+                radial-gradient(circle at top right, rgba(30, 58, 138, 0.4), transparent 40%),
+                radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.15), transparent 50%),
+                linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
             background-repeat: no-repeat;
             z-index: -1;
         }
@@ -56,27 +58,27 @@
             width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: rgba(30, 41, 59, 0.3);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #374151;
+            background-color: #475569;
             border-radius: 10px;
             border: 2px solid transparent;
             background-clip: content-box;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background-color: #4b5563;
+            background-color: #64748b;
         }
         /* Barra de ferramentas de destaque */
         #highlight-toolbar {
             position: absolute;
             display: none;
-            background-color: #1f2937;
+            background-color: #1e293b;
             border-radius: 6px;
             padding: 4px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             z-index: 1000;
-            border: 1px solid #4b5563;
+            border: 1px solid #334155;
         }
         .color-swatch {
             width: 20px;
@@ -143,35 +145,175 @@
         .minimize-btn.rotated {
             transform: rotate(180deg);
         }
+        
+        /* NOVOS ESTILOS PARA OS CARDS */
+        .card-container {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 
+                0 10px 25px -5px rgba(0, 0, 0, 0.5),
+                0 8px 10px -6px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.7), transparent);
+            z-index: 1;
+        }
+        
+        .card-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, rgba(59, 130, 246, 0.7), transparent);
+            z-index: 1;
+        }
+        
+        .card-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+        
+        .card-container:hover .card-glow {
+            opacity: 1;
+        }
+        
+        .card-header {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .subcard-container {
+            background: linear-gradient(135deg, #1e293b 0%, #1e293b 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 
+                0 4px 15px -3px rgba(0, 0, 0, 0.4),
+                0 3px 8px -2px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(6px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .subcard-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
+            z-index: 1;
+        }
+        
+        .subcard-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, rgba(59, 130, 246, 0.5), transparent);
+            z-index: 1;
+        }
+        
+        /* Efeito de brilho nos botões */
+        .btn-glow {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-glow::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-glow:hover::before {
+            left: 100%;
+        }
+        
+        /* Sidebar mais escura */
+        .sidebar-dark {
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 
+                0 10px 25px -5px rgba(0, 0, 0, 0.4),
+                0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Botões de controle mais escuros */
+        .control-btn {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 
+                0 4px 15px -3px rgba(0, 0, 0, 0.4),
+                0 3px 8px -2px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Modal mais escuro */
+        .modal-dark {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 
+                0 20px 30px -10px rgba(0, 0, 0, 0.5),
+                0 15px 20px -5px rgba(0, 0, 0, 0.4);
+        }
     </style>
 </head>
 <body class="min-h-screen">
     <!-- Tela de Carregamento -->
-    <div id="loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#111827] transition-opacity duration-500">
+    <div id="loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0f172a] transition-opacity duration-500">
         <div class="text-blue-400 text-2xl font-bold">UNINTA</div>
         <p class="text-gray-400 mt-2">Carregando manual...</p>
     </div>
     <!-- Container principal que gerencia o layout da sidebar -->
     <div id="app-container" class="opacity-0 transition-opacity duration-500">
         <!-- Sidebar -->
-        <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen bg-gray-900/80 backdrop-blur-lg border-r border-gray-700/60 transition-transform duration-300 ease-in-out">
+        <aside id="sidebar" class="sidebar-dark fixed top-0 left-0 z-40 w-64 h-screen transition-transform duration-300 ease-in-out">
             <div class="flex flex-col h-full p-4">
                 <!-- Cabeçalho da Sidebar -->
                 <div class="flex items-center justify-between mb-6 px-2">
                     <h2 class="text-xl font-bold text-white">Sumário</h2>
-                    <button id="pin-sidebar-btn" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md" title="Fixar/Ocultar menu">
+                    <button id="pin-sidebar-btn" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200 btn-glow" title="Fixar/Ocultar menu">
                         <i data-lucide="pin"></i>
                     </button>
                 </div>
                 <!-- Navegação -->
                 <nav id="menu-nav-links" class="flex-1 overflow-y-auto custom-scrollbar"></nav>
                 <!-- Controles de Importar/Exportar -->
-                <div class="mt-4 pt-4 border-t border-gray-700 space-y-2">
-                    <button id="import-btn" class="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700/50 rounded-md hover:bg-gray-700">
+                <div class="mt-4 pt-4 border-t border-gray-700/50 space-y-2">
+                    <button id="import-btn" class="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700/30 hover:bg-gray-700/50 rounded-md transition-all duration-200 btn-glow">
                         <i data-lucide="upload" class="h-4 w-4 mr-2"></i>
                         Importar Dados
                     </button>
-                    <button id="export-btn" class="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700/50 rounded-md hover:bg-gray-700">
+                    <button id="export-btn" class="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700/30 hover:bg-gray-700/50 rounded-md transition-all duration-200 btn-glow">
                         <i data-lucide="download" class="h-4 w-4 mr-2"></i>
                         Exportar Dados
                     </button>
@@ -180,7 +322,7 @@
             </div>
         </aside>
         <!-- Botão para abrir a sidebar quando ela está oculta -->
-        <button id="open-sidebar-btn" class="fixed top-4 left-4 z-30 p-2 text-gray-300 bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg hover:bg-gray-700 transition-opacity duration-300 ease-in-out opacity-0 pointer-events-none">
+        <button id="open-sidebar-btn" class="control-btn fixed top-4 left-4 z-30 p-2 text-gray-300 rounded-full shadow-lg hover:text-white transition-all duration-300 ease-in-out opacity-0 pointer-events-none">
             <i data-lucide="menu"></i>
         </button>
         <!-- Conteúdo Principal -->
@@ -206,20 +348,20 @@
         </main>
     </div>
     <!-- Botão Minimizar/Expandir Todos Fixo -->
-    <button id="minimize-all-btn" class="p-2 text-gray-400 bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg hover:text-white hover:bg-gray-700 fixed top-4 right-4 z-30" title="Minimizar/Expandir Todos">
+    <button id="minimize-all-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white fixed top-4 right-4 z-30" title="Minimizar/Expandir Todos">
         <i data-lucide="chevrons-up-down"></i>
     </button>
     
     <!-- Controles do ADM -->
     <div id="admin-controls" class="fixed bottom-5 z-20 flex items-center space-x-3 transition-all duration-300 ease-in-out">
-        <button id="admin-toggle-btn" class="p-3 bg-gray-800 rounded-full shadow-lg text-gray-300 hover:bg-gray-700">
+        <button id="admin-toggle-btn" class="control-btn p-3 rounded-full shadow-lg text-gray-300 hover:bg-gray-700/50 transition-all duration-200">
             <i data-lucide="shield"></i>
         </button>
-        <button id="save-btn" class="hidden items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-full shadow-lg hover:bg-green-700">
+        <button id="save-btn" class="hidden items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-full shadow-lg hover:bg-green-700 transition-all duration-200">
             <i data-lucide="save" class="mr-2 h-5 w-5"></i>
             Salvar
         </button>
-        <button id="reset-btn" class="hidden items-center px-4 py-2 bg-red-600 text-white font-semibold rounded-full shadow-lg hover:bg-red-700">
+        <button id="reset-btn" class="hidden items-center px-4 py-2 bg-red-600 text-white font-semibold rounded-full shadow-lg hover:bg-red-700 transition-all duration-200">
             <i data-lucide="rotate-ccw" class="mr-2 h-5 w-5"></i>
             Resetar
         </button>
@@ -230,13 +372,13 @@
         <i data-lucide="plus"></i>
     </button>
     <!-- Modal de Confirmação para Exclusão -->
-    <div id="confirm-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center">
-        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm">
+    <div id="confirm-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center backdrop-blur-sm">
+        <div class="modal-dark rounded-lg shadow-xl p-6 w-full max-w-sm">
             <h3 id="modal-title" class="text-lg font-bold text-white">Confirmar Exclusão</h3>
             <p id="modal-message" class="text-gray-300 mt-2">Você tem certeza que deseja excluir este card? Esta ação não pode ser desfeita.</p>
             <div class="mt-6 flex justify-end space-x-4">
-                <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500">Cancelar</button>
-                <button id="modal-confirm-btn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-500">Excluir</button>
+                <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-all duration-200">Cancelar</button>
+                <button id="modal-confirm-btn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-500 transition-all duration-200">Excluir</button>
             </div>
         </div>
     </div>
@@ -263,13 +405,14 @@
     
     <!-- Templates -->
     <template id="section-template">
-        <section class="bg-gray-800/70 backdrop-blur-sm border border-gray-700/80 rounded-xl shadow-lg transition-all duration-300 ease-in-out" draggable="false">
+        <section class="card-container rounded-xl transition-all duration-300 ease-in-out" draggable="false">
+            <div class="card-glow"></div>
             <div class="p-6">
                 <div class="flex justify-between items-start">
                     <div class="prose prose-invert max-w-none w-full text-gray-300">
                         <div class="flex items-center justify-between mb-2">
                             <h2 class="text-2xl font-bold text-white" data-editable></h2>
-                            <button class="minimize-btn text-gray-500 hover:text-blue-400 transition-colors p-1" title="Minimizar/Expandir">
+                            <button class="minimize-btn text-gray-400 hover:text-blue-400 transition-colors p-1" title="Minimizar/Expandir">
                                 <i data-lucide="chevron-down" class="h-5 w-5"></i>
                             </button>
                         </div>
@@ -279,19 +422,19 @@
                         </div>
                     </div>
                     <div class="flex flex-col items-center space-y-2 ml-4 flex-shrink-0">
-                        <button class="pin-btn text-gray-500 hover:text-blue-400 transition-colors p-1" title="Fixar Tópico no Topo">
+                        <button class="pin-btn text-gray-400 hover:text-blue-400 transition-colors p-1" title="Fixar Tópico no Topo">
                             <i data-lucide="bookmark-plus" class="h-5 w-5"></i>
                         </button>
-                        <button class="add-subcard-btn hidden text-gray-500 hover:text-purple-400 transition-colors p-1" title="Adicionar Subcard">
+                        <button class="add-subcard-btn hidden text-gray-400 hover:text-purple-400 transition-colors p-1" title="Adicionar Subcard">
                             <i data-lucide="folder-plus" class="h-5 w-5"></i>
                         </button>
-                        <button class="copy-btn text-gray-500 hover:text-yellow-400 transition-colors p-1" title="Copiar Texto">
+                        <button class="copy-btn text-gray-400 hover:text-yellow-400 transition-colors p-1" title="Copiar Texto">
                             <i data-lucide="copy" class="h-5 w-5"></i>
                         </button>
-                        <button class="clone-btn hidden text-gray-500 hover:text-green-400 transition-colors p-1" title="Clonar Card">
+                        <button class="clone-btn hidden text-gray-400 hover:text-green-400 transition-colors p-1" title="Clonar Card">
                             <i data-lucide="copy" class="h-5 w-5"></i>
                         </button>
-                        <button class="delete-btn hidden text-gray-500 hover:text-red-400 transition-colors p-1" title="Excluir Card">
+                        <button class="delete-btn hidden text-gray-400 hover:text-red-400 transition-colors p-1" title="Excluir Card">
                             <i data-lucide="trash-2" class="h-5 w-5"></i>
                         </button>
                     </div>
@@ -301,12 +444,12 @@
     </template>
     
     <template id="subcard-template">
-        <div class="subcard bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-lg p-4 shadow-md">
+        <div class="subcard subcard-container rounded-lg p-4 shadow-md">
             <div class="flex justify-between items-start">
                 <div class="w-full">
                     <div class="flex items-center justify-between mb-2">
                         <h3 class="subcard-title" data-editable></h3>
-                        <button class="subcard-minimize-btn text-gray-500 hover:text-blue-400 transition-colors p-1" title="Minimizar/Expandir">
+                        <button class="subcard-minimize-btn text-gray-400 hover:text-blue-400 transition-colors p-1" title="Minimizar/Expandir">
                             <i data-lucide="chevron-down" class="h-4 w-4"></i>
                         </button>
                     </div>
@@ -315,13 +458,13 @@
                     </div>
                 </div>
                 <div class="flex flex-col items-center space-y-2 ml-4 flex-shrink-0">
-                    <button class="subcard-copy-btn text-gray-500 hover:text-yellow-400 transition-colors p-1" title="Copiar Texto">
+                    <button class="subcard-copy-btn text-gray-400 hover:text-yellow-400 transition-colors p-1" title="Copiar Texto">
                         <i data-lucide="copy" class="h-4 w-4"></i>
                     </button>
-                    <button class="subcard-clone-btn hidden text-gray-500 hover:text-green-400 transition-colors p-1" title="Clonar Subcard">
+                    <button class="subcard-clone-btn hidden text-gray-400 hover:text-green-400 transition-colors p-1" title="Clonar Subcard">
                         <i data-lucide="copy" class="h-4 w-4"></i>
                     </button>
-                    <button class="subcard-delete-btn hidden text-gray-500 hover:text-red-400 transition-colors p-1" title="Excluir Subcard">
+                    <button class="subcard-delete-btn hidden text-gray-400 hover:text-red-400 transition-colors p-1" title="Excluir Subcard">
                         <i data-lucide="trash-2" class="h-4 w-4"></i>
                     </button>
                 </div>
@@ -554,6 +697,16 @@
                         sectionEl.id = item.id;
                         sectionEl.dataset.id = item.id;
                         
+                        // Adiciona efeito de brilho interativo
+                        const cardGlow = sectionEl.querySelector('.card-glow');
+                        sectionEl.addEventListener('mousemove', (e) => {
+                            const rect = sectionEl.getBoundingClientRect();
+                            const x = ((e.clientX - rect.left) / rect.width) * 100;
+                            const y = ((e.clientY - rect.top) / rect.height) * 100;
+                            cardGlow.style.setProperty('--mouse-x', `${x}%`);
+                            cardGlow.style.setProperty('--mouse-y', `${y}%`);
+                        });
+                        
                         const titleEl = sectionEl.querySelector('h2');
                         titleEl.textContent = item.title;
                         
@@ -710,7 +863,7 @@
                     const menuLink = document.createElement('a');
                     menuLink.href = `#${item.id}`;
                     menuLink.textContent = item.title;
-                    menuLink.className = 'block py-2 px-3 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors';
+                    menuLink.className = 'block py-3 px-3 rounded-md text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-200';
                     menuLink.onclick = (e) => {
                         e.preventDefault();
                         document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
