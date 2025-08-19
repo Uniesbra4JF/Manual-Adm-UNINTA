@@ -139,10 +139,10 @@
             opacity: 1;
         }
         /* Botão minimizar individual */
-        .minimize-btn {
+        .minimize-btn, .subcard-minimize-btn {
             transition: transform 0.3s ease;
         }
-        .minimize-btn.rotated {
+        .minimize-btn.rotated, .subcard-minimize-btn.rotated {
             transform: rotate(180deg);
         }
         
@@ -285,6 +285,21 @@
                 0 20px 30px -10px rgba(0, 0, 0, 0.5),
                 0 15px 20px -5px rgba(0, 0, 0, 0.4);
         }
+
+        /* Estilos da Barra de Pesquisa */
+        #search-input {
+            width: 0;
+            opacity: 0;
+            transition: all 0.3s ease-in-out;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        #search-input.active {
+            width: 200px; /* ou a largura que preferir */
+            opacity: 1;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -347,10 +362,22 @@
             </div>
         </main>
     </div>
-    <!-- Botão Minimizar/Expandir Todos Fixo -->
-    <button id="minimize-all-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white fixed top-4 right-4 z-30" title="Minimizar/Expandir Todos">
-        <i data-lucide="chevrons-up-down"></i>
-    </button>
+
+    <!-- Controles Fixos no Topo Direito -->
+    <div class="fixed top-4 right-4 z-30 flex items-center space-x-2">
+        <button id="settings-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white" title="Configurações">
+            <i data-lucide="settings"></i>
+        </button>
+        <div class="flex items-center control-btn rounded-full shadow-lg">
+            <input type="text" id="search-input" placeholder="Pesquisar..." class="bg-transparent text-white focus:outline-none">
+            <button id="search-btn" class="p-2 text-gray-400 hover:text-white" title="Pesquisar">
+                <i data-lucide="search"></i>
+            </button>
+        </div>
+        <button id="minimize-all-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white" title="Minimizar/Expandir Todos">
+            <i data-lucide="chevrons-up-down"></i>
+        </button>
+    </div>
     
     <!-- Controles do ADM -->
     <div id="admin-controls" class="fixed bottom-5 z-20 flex items-center space-x-3 transition-all duration-300 ease-in-out">
@@ -371,6 +398,7 @@
     <button id="add-card-btn" class="hidden fixed bottom-5 right-5 z-20 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-110">
         <i data-lucide="plus"></i>
     </button>
+
     <!-- Modal de Confirmação para Exclusão -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center backdrop-blur-sm">
         <div class="modal-dark rounded-lg shadow-xl p-6 w-full max-w-sm">
@@ -379,6 +407,23 @@
             <div class="mt-6 flex justify-end space-x-4">
                 <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-all duration-200">Cancelar</button>
                 <button id="modal-confirm-btn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-500 transition-all duration-200">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Configurações -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center backdrop-blur-sm">
+        <div class="modal-dark rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold text-white mb-4">Configurações</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="api-key-input" class="block text-sm font-medium text-gray-300 mb-1">Chave de API (Busca Inteligente)</label>
+                    <input type="password" id="api-key-input" class="w-full bg-gray-800/50 border border-gray-600 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Insira sua chave de API">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="settings-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-all duration-200">Cancelar</button>
+                <button id="settings-save-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition-all duration-200">Salvar</button>
             </div>
         </div>
     </div>
@@ -577,14 +622,27 @@
             const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
             const openSidebarBtn = document.getElementById('open-sidebar-btn');
             const menuNavLinks = document.getElementById('menu-nav-links');
+            
             const confirmModal = document.getElementById('confirm-modal');
             const modalConfirmBtn = document.getElementById('modal-confirm-btn');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
+            
             const highlightToolbar = document.getElementById('highlight-toolbar');
             const minimizeAllBtn = document.getElementById('minimize-all-btn');
+            
             const importBtn = document.getElementById('import-btn');
             const exportBtn = document.getElementById('export-btn');
             const importFileInput = document.getElementById('import-file-input');
+
+            // Novos elementos
+            const searchBtn = document.getElementById('search-btn');
+            const searchInput = document.getElementById('search-input');
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const settingsSaveBtn = document.getElementById('settings-save-btn');
+            const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+            const apiKeyInput = document.getElementById('api-key-input');
+
             // --- FUNÇÕES ---
             function updateStateFromDOM() {
                 const currentOrderIds = Array.from(contentSections.children).map(sectionEl => sectionEl.dataset.id);
@@ -654,6 +712,12 @@
                 
                 const savedSidebarPin = localStorage.getItem('sidebarPinned');
                 state.isSidebarPinned = window.innerWidth < 1024 ? false : (savedSidebarPin === null ? true : JSON.parse(savedSidebarPin));
+
+                const savedApiKey = localStorage.getItem('unintaApiKey');
+                if (savedApiKey) {
+                    apiKeyInput.value = savedApiKey;
+                }
+
                 render();
                 // Esconde o loader e mostra o conteúdo
                 const loader = document.getElementById('loader');
@@ -716,11 +780,10 @@
                         // Configura o estado de minimização do card
                         const cardContentWrapper = sectionEl.querySelector('.card-content-wrapper');
                         const minimizeBtn = sectionEl.querySelector('.minimize-btn');
-                        const minimizeIcon = minimizeBtn.querySelector('i');
                         
                         if (item.minimized) {
                             cardContentWrapper.classList.add('collapsed');
-                            minimizeIcon.classList.add('rotated');
+                            minimizeBtn.classList.add('rotated');
                         }
                         
                         // Container para subcards
@@ -743,11 +806,10 @@
                                 // Configura o estado de minimização do subcard
                                 const subcardContentWrapper = subcardEl.querySelector('.subcard-content-wrapper');
                                 const subcardMinimizeBtn = subcardEl.querySelector('.subcard-minimize-btn');
-                                const subcardMinimizeIcon = subcardMinimizeBtn.querySelector('i');
                                 
                                 if (subcard.minimized) {
                                     subcardContentWrapper.classList.add('collapsed');
-                                    subcardMinimizeIcon.classList.add('rotated');
+                                    subcardMinimizeBtn.classList.add('rotated');
                                 }
                                 
                                 // Configuração dos botões do subcard
@@ -938,20 +1000,19 @@
                 updateAdminUI();
             }
             function updateSidebarUI() {
-                const pinIcon = pinSidebarBtn.querySelector('i');
                 if (state.isSidebarPinned) {
                     sidebar.classList.remove('-translate-x-full');
                     mainContent.classList.add('lg:ml-64');
                     adminControls.classList.add('lg:left-72');
                     openSidebarBtn.classList.add('opacity-0', 'pointer-events-none');
-                    pinIcon.setAttribute('data-lucide', 'pin-off');
+                    pinSidebarBtn.innerHTML = '<i data-lucide="pin-off"></i>';
                     pinSidebarBtn.classList.add('bg-blue-600/30', 'text-blue-300');
                 } else {
                     sidebar.classList.add('-translate-x-full');
                     mainContent.classList.remove('lg:ml-64');
                     adminControls.classList.remove('lg:left-72');
                     openSidebarBtn.classList.remove('opacity-0', 'pointer-events-none');
-                    pinIcon.setAttribute('data-lucide', 'pin');
+                    pinSidebarBtn.innerHTML = '<i data-lucide="pin"></i>';
                     pinSidebarBtn.classList.remove('bg-blue-600/30', 'text-blue-300');
                 }
                 lucide.createIcons();
@@ -1053,27 +1114,20 @@
             function toggleCardMinimize(cardId) {
                 const card = state.content.find(item => item.id === cardId);
                 if (!card) return;
-                
-                // Alterna o estado de minimização
+
                 card.minimized = !card.minimized;
-                
-                // Atualiza a UI
+
                 const cardElement = document.getElementById(cardId);
                 if (cardElement) {
                     const cardContentWrapper = cardElement.querySelector('.card-content-wrapper');
                     const minimizeBtn = cardElement.querySelector('.minimize-btn');
-                    const minimizeIcon = minimizeBtn.querySelector('i');
                     
-                    if (card.minimized) {
-                        cardContentWrapper.classList.add('collapsed');
-                        minimizeIcon.classList.add('rotated');
-                    } else {
-                        cardContentWrapper.classList.remove('collapsed');
-                        minimizeIcon.classList.remove('rotated');
+                    if (cardContentWrapper && minimizeBtn) {
+                        cardContentWrapper.classList.toggle('collapsed', card.minimized);
+                        minimizeBtn.classList.toggle('rotated', card.minimized);
                     }
                 }
                 
-                // Salva o estado
                 saveState();
             }
             
@@ -1084,26 +1138,19 @@
                 const subcard = parentCard.subcards.find(subcard => subcard.id === subcardId);
                 if (!subcard) return;
                 
-                // Alterna o estado de minimização
                 subcard.minimized = !subcard.minimized;
                 
-                // Atualiza a UI
                 const subcardElement = document.querySelector(`[data-id="${subcardId}"]`);
                 if (subcardElement) {
                     const subcardContentWrapper = subcardElement.querySelector('.subcard-content-wrapper');
                     const subcardMinimizeBtn = subcardElement.querySelector('.subcard-minimize-btn');
-                    const subcardMinimizeIcon = subcardMinimizeBtn.querySelector('i');
-                    
-                    if (subcard.minimized) {
-                        subcardContentWrapper.classList.add('collapsed');
-                        subcardMinimizeIcon.classList.add('rotated');
-                    } else {
-                        subcardContentWrapper.classList.remove('collapsed');
-                        subcardMinimizeIcon.classList.remove('rotated');
+
+                    if (subcardContentWrapper && subcardMinimizeBtn) {
+                        subcardContentWrapper.classList.toggle('collapsed', subcard.minimized);
+                        subcardMinimizeBtn.classList.toggle('rotated', subcard.minimized);
                     }
                 }
                 
-                // Salva o estado
                 saveState();
             }
             
@@ -1364,6 +1411,7 @@
                     // Limpa o localStorage
                     localStorage.removeItem('unintaManualState');
                     localStorage.removeItem('sidebarPinned');
+                    localStorage.removeItem('unintaApiKey');
                     
                     // Reseta o estado para os dados iniciais
                     state.content = [...initialData];
@@ -1399,7 +1447,7 @@
                         if (parent.closest('[contenteditable="true"]')) {
                             highlightToolbar.style.display = 'flex';
                             highlightToolbar.style.left = `${rect.left + window.scrollX + rect.width / 2 - highlightToolbar.offsetWidth / 2}px`;
-                            highlightToolbar.style.top = `${rect.top + window.scrollY - highlight-toolbar.offsetHeight - 8}px`;
+                            highlightToolbar.style.top = `${rect.top + window.scrollY - highlightToolbar.offsetHeight - 8}px`;
                         } else {
                            highlightToolbar.style.display = 'none';
                         }
@@ -1426,19 +1474,15 @@
             }
             function toggleMinimizeAllCards() {
                 state.areCardsMinimized = !state.areCardsMinimized;
-                const wrappers = document.querySelectorAll('.card-content-wrapper');
+                const wrappers = document.querySelectorAll('.card-content-wrapper, .subcard-content-wrapper');
                 wrappers.forEach(wrapper => {
                     wrapper.classList.toggle('collapsed', state.areCardsMinimized);
                 });
                 
                 // Atualiza os ícones de minimização
-                const minimizeBtns = document.querySelectorAll('.minimize-btn i');
-                minimizeBtns.forEach(icon => {
-                    if (state.areCardsMinimized) {
-                        icon.classList.add('rotated');
-                    } else {
-                        icon.classList.remove('rotated');
-                    }
+                const minimizeBtns = document.querySelectorAll('.minimize-btn, .subcard-minimize-btn');
+                minimizeBtns.forEach(btn => {
+                    btn.classList.toggle('rotated', state.areCardsMinimized);
                 });
             }
             function handleExport() {
@@ -1513,6 +1557,34 @@
                     render(); 
                 } 
             });
+
+            // --- Lógica de Pesquisa e Configurações ---
+            function handleSearch() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const cards = document.querySelectorAll('#content-sections > section');
+
+                cards.forEach(card => {
+                    const title = card.querySelector('h2')?.innerText.toLowerCase() || '';
+                    const content = card.querySelector('div[data-editable]')?.innerText.toLowerCase() || '';
+                    const subcards = card.querySelectorAll('.subcard');
+                    let subcardMatch = false;
+
+                    subcards.forEach(subcard => {
+                        const subTitle = subcard.querySelector('.subcard-title')?.innerText.toLowerCase() || '';
+                        const subContent = subcard.querySelector('.subcard-content-wrapper div[data-editable]')?.innerText.toLowerCase() || '';
+                        if (subTitle.includes(searchTerm) || subContent.includes(searchTerm)) {
+                            subcardMatch = true;
+                        }
+                    });
+
+                    if (title.includes(searchTerm) || content.includes(searchTerm) || subcardMatch) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
             // --- EVENT LISTENERS ---
             adminToggleBtn.addEventListener('click', toggleAdminMode);
             saveBtn.addEventListener('click', () => {
@@ -1536,7 +1608,6 @@
             modalCancelBtn.addEventListener('click', () => {
                 confirmModal.classList.add('hidden');
                 confirmModal.classList.remove('flex');
-                // Limpa as variáveis globais
                 cardToDelete = null;
                 subcardToDelete = null;
             });
@@ -1555,6 +1626,34 @@
             importBtn.addEventListener('click', handleImport);
             exportBtn.addEventListener('click', handleExport);
             importFileInput.addEventListener('change', processImportedFile);
+
+            // Listeners de Pesquisa e Configurações
+            searchBtn.addEventListener('click', () => {
+                searchInput.classList.toggle('active');
+                if (searchInput.classList.contains('active')) {
+                    searchInput.focus();
+                }
+            });
+            searchInput.addEventListener('input', handleSearch);
+
+            settingsBtn.addEventListener('click', () => {
+                settingsModal.classList.remove('hidden');
+                settingsModal.classList.add('flex');
+            });
+
+            settingsCancelBtn.addEventListener('click', () => {
+                settingsModal.classList.add('hidden');
+                settingsModal.classList.remove('flex');
+            });
+
+            settingsSaveBtn.addEventListener('click', () => {
+                localStorage.setItem('unintaApiKey', apiKeyInput.value);
+                settingsModal.classList.add('hidden');
+                settingsModal.classList.remove('flex');
+                alert('Chave de API salva com sucesso!');
+            });
+
+
             // --- INICIALIZAÇÃO ---
             loadState();
             setupHighlightToolbar();
