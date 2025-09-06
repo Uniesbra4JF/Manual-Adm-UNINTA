@@ -277,13 +277,14 @@
                 0 3px 8px -2px rgba(0, 0, 0, 0.3);
         }
         
-        /* Modal mais escuro */
+        /* Modal mais escuro (Cor alterada) */
         .modal-dark {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: linear-gradient(135deg, #1e293b 0%, #111827 100%);
+            border: 1px solid rgba(99, 102, 241, 0.5); /* Borda em tom de anil/índigo */
             box-shadow: 
-                0 20px 30px -10px rgba(0, 0, 0, 0.5),
-                0 15px 20px -5px rgba(0, 0, 0, 0.4);
+                0 20px 30px -10px rgba(0, 0, 0, 0.6), /* Sombra mais forte */
+                0 15px 20px -5px rgba(0, 0, 0, 0.5),
+                inset 0 0 15px rgba(99, 102, 241, 0.1); /* Brilho interno */
         }
 
         /* Estilos da Barra de Pesquisa */
@@ -297,6 +298,19 @@
         #search-input.active {
             width: 200px; /* ou a largura que preferir */
             opacity: 1;
+        }
+        
+        /* Estilo para o modal de busca inteligente */
+        #ai-search-modal textarea {
+            min-height: 120px;
+        }
+        
+        #ai-search-modal .modal-dark {
+            max-width: 500px;
+        }
+        
+        #ai-search-modal textarea {
+            min-height: 120px;
             padding-left: 0.75rem;
             padding-right: 0.75rem;
         }
@@ -320,9 +334,50 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+
+        /* Notificação de Busca */
+        .search-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+            display: flex;
+            align-items: center;
+            transform: translateX(-50%) translateY(20px);
+        }
+        .search-notification.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .search-notification.success {
+            background-color: #10b981; /* Verde */
+        }
+        .search-notification.error {
+            background-color: #ef4444; /* Vermelho */
+        }
+        .search-notification.info {
+            background-color: #3b82f6; /* Azul */
+        }
+
+        /* Destaque da Busca Inteligente */
+        mark.ai-search-highlight {
+            background-color: #8b5cf6; /* Roxo mais vibrante */
+            color: #f5f3ff;
+            padding: 2px 1px;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body class="min-h-screen">
+    <!-- Barra de Progresso -->
+    <div id="progress-bar" class="fixed top-0 left-0 h-1 bg-blue-500 z-[9999]" style="width: 0%; opacity: 0; transition: width 10s cubic-bezier(0.1, 0.7, 0.1, 1), opacity 0.3s ease-out;"></div>
+
     <!-- Tela de Carregamento -->
     <div id="loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0f172a] transition-opacity duration-500">
         <div class="text-blue-400 text-2xl font-bold">UNINTA</div>
@@ -385,6 +440,7 @@
 
     <!-- Controles Fixos no Topo Direito -->
     <div class="fixed top-4 right-4 z-30 flex items-center space-x-2">
+        <span id="ai-results-count" class="hidden text-sm bg-indigo-600 text-white font-semibold px-3 py-1 rounded-full"></span>
         <button id="settings-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white" title="Configurações">
             <i data-lucide="settings"></i>
         </button>
@@ -393,10 +449,10 @@
             <button id="search-btn" class="p-2 text-gray-400 hover:text-white" title="Pesquisar">
                 <i data-lucide="search"></i>
             </button>
-            <button id="ai-search-btn" class="p-2 text-gray-400 hover:text-white" title="Busca Inteligente">
-                <i data-lucide="sparkles"></i>
-            </button>
         </div>
+        <button id="ai-search-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white" title="Busca Inteligente">
+            <i data-lucide="sparkles"></i>
+        </button>
         <button id="minimize-all-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white" title="Minimizar/Expandir Todos">
             <i data-lucide="chevrons-up-down"></i>
         </button>
@@ -451,6 +507,34 @@
         </div>
     </div>
     
+    <!-- Modal de Busca Inteligente -->
+    <div id="ai-search-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center backdrop-blur-sm">
+        <div class="modal-dark rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold text-white mb-4">Busca Inteligente</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="ai-search-prompt" class="block text-sm font-medium text-gray-300 mb-2">Descreva o que você está procurando:</label>
+                    <textarea 
+                        id="ai-search-prompt" 
+                        class="w-full bg-gray-800/50 border border-gray-600 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" 
+                        rows="4" 
+                        placeholder="Ex: informações sobre trancamento de curso, requisitos para segunda licenciatura..."
+                    ></textarea>
+                </div>
+                <div id="ai-suggestions-container" class="hidden pt-4 border-t border-gray-700/50">
+                    <h4 class="text-sm font-semibold text-gray-400 mb-2">Sugestões de busca:</h4>
+                    <div id="ai-suggestions-list" class="flex flex-wrap gap-2">
+                        <!-- Suggestion buttons will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="ai-search-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-all duration-200">Cancelar</button>
+                <button id="ai-search-confirm-btn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500 transition-all duration-200">Buscar</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Barra de ferramentas flutuante para destaque de texto -->
     <div id="highlight-toolbar">
         <div class="flex space-x-2 items-center">
@@ -469,6 +553,12 @@
     <div id="copy-notification" class="copy-notification">
         <i data-lucide="check" class="inline mr-2"></i>
         Conteúdo copiado para a área de transferência!
+    </div>
+
+    <!-- Notificação de Busca -->
+    <div id="search-notification" class="search-notification">
+        <span id="search-notification-icon-container" class="mr-2 flex items-center"></span>
+        <span id="search-notification-message"></span>
     </div>
     
     <!-- Templates -->
@@ -624,8 +714,9 @@
                 isSidebarPinned: true, 
                 areCardsMinimized: false 
             };
-            let cardToDelete = null; // Variável para armazenar o ID do card a ser excluído
-            let subcardToDelete = null; // Variável para armazenar o ID do subcard a ser excluído
+            let cardToDelete = null; 
+            let subcardToDelete = null;
+            let isAiSearchActive = false;
             // --- ELEMENTOS DO DOM ---
             const appContainer = document.getElementById('app-container');
             const mainContent = document.getElementById('main-content');
@@ -656,6 +747,7 @@
             const importBtn = document.getElementById('import-btn');
             const exportBtn = document.getElementById('export-btn');
             const importFileInput = document.getElementById('import-file-input');
+            const progressBar = document.getElementById('progress-bar');
 
             // Novos elementos
             const searchBtn = document.getElementById('search-btn');
@@ -666,8 +758,41 @@
             const settingsSaveBtn = document.getElementById('settings-save-btn');
             const settingsCancelBtn = document.getElementById('settings-cancel-btn');
             const apiKeyInput = document.getElementById('api-key-input');
+            const aiResultsCount = document.getElementById('ai-results-count');
+
+            // Modal de Busca Inteligente
+            const aiSearchModal = document.getElementById('ai-search-modal');
+            const aiSearchPrompt = document.getElementById('ai-search-prompt');
+            const aiSearchConfirmBtn = document.getElementById('ai-search-confirm-btn');
+            const aiSearchCancelBtn = document.getElementById('ai-search-cancel-btn');
+            
+            // Notificações
+            const searchNotification = document.getElementById('search-notification');
+            const searchNotificationMessage = document.getElementById('search-notification-message');
 
             // --- FUNÇÕES ---
+            function showSearchNotification(message, type = 'info', duration = 4000) {
+                searchNotification.classList.remove('success', 'error', 'info');
+                searchNotification.classList.add(type);
+                
+                const iconContainer = document.getElementById('search-notification-icon-container');
+                let icon = 'info';
+                if (type === 'success') icon = 'check-circle';
+                if (type === 'error') icon = 'alert-circle';
+                
+                if (iconContainer) {
+                    iconContainer.innerHTML = `<i data-lucide="${icon}" class="h-5 w-5"></i>`;
+                }
+                
+                lucide.createIcons();
+                searchNotificationMessage.textContent = message;
+                searchNotification.classList.add('show');
+                
+                setTimeout(() => {
+                    searchNotification.classList.remove('show');
+                }, duration);
+            }
+            
             function updateStateFromDOM() {
                 const currentOrderIds = Array.from(contentSections.children).map(sectionEl => sectionEl.dataset.id);
                 const contentMap = new Map(state.content.map(item => [item.id, item]));
@@ -677,7 +802,6 @@
                     const content = sectionEl.querySelector('div[data-editable]').innerHTML;
                     const originalItem = contentMap.get(id);
                     
-                    // Coleta subcards do DOM
                     const subcardsContainer = sectionEl.querySelector('.subcards-container');
                     const subcards = [];
                     if (subcardsContainer) {
@@ -743,13 +867,11 @@
                 }
 
                 render();
-                // Esconde o loader e mostra o conteúdo
                 const loader = document.getElementById('loader');
                 
                 setTimeout(() => {
                     loader.classList.add('opacity-0');
                     appContainer.classList.remove('opacity-0');
-                    // Remove o loader do DOM após a transição
                     setTimeout(() => loader.style.display = 'none', 500);
                 }, 100); 
             }
@@ -785,7 +907,6 @@
                         sectionEl.id = item.id;
                         sectionEl.dataset.id = item.id;
                         
-                        // Adiciona efeito de brilho interativo
                         const cardGlow = sectionEl.querySelector('.card-glow');
                         sectionEl.addEventListener('mousemove', (e) => {
                             const rect = sectionEl.getBoundingClientRect();
@@ -801,7 +922,6 @@
                         const contentEl = sectionEl.querySelector('div[data-editable]');
                         contentEl.innerHTML = item.content;
                         
-                        // Configura o estado de minimização do card
                         const cardContentWrapper = sectionEl.querySelector('.card-content-wrapper');
                         const minimizeBtn = sectionEl.querySelector('.minimize-btn');
                         
@@ -810,10 +930,8 @@
                             minimizeBtn.classList.add('rotated');
                         }
                         
-                        // Container para subcards
                         const subcardsContainer = sectionEl.querySelector('.subcards-container');
                         
-                        // Renderiza subcards
                         if (item.subcards && item.subcards.length > 0) {
                             item.subcards.forEach(subcard => {
                                 const subcardClone = subcardTemplate.content.cloneNode(true);
@@ -827,7 +945,6 @@
                                 const subcardContentEl = subcardEl.querySelector('.subcard-content-wrapper div[data-editable]');
                                 subcardContentEl.innerHTML = subcard.content;
                                 
-                                // Configura o estado de minimização do subcard
                                 const subcardContentWrapper = subcardEl.querySelector('.subcard-content-wrapper');
                                 const subcardMinimizeBtn = subcardEl.querySelector('.subcard-minimize-btn');
                                 
@@ -836,15 +953,12 @@
                                     subcardMinimizeBtn.classList.add('rotated');
                                 }
                                 
-                                // Configuração dos botões do subcard
                                 const subcardCopyBtn = subcardEl.querySelector('.subcard-copy-btn');
                                 subcardCopyBtn.setAttribute('data-card-id', item.id);
                                 subcardCopyBtn.setAttribute('data-subcard-id', subcard.id);
                                 subcardCopyBtn.addEventListener('click', (e) => {
                                     e.stopPropagation();
-                                    const cardId = e.currentTarget.getAttribute('data-card-id');
-                                    const subcardId = e.currentTarget.getAttribute('data-subcard-id');
-                                    copySubcardContent(cardId, subcardId);
+                                    copySubcardContent(e.currentTarget.getAttribute('data-card-id'), e.currentTarget.getAttribute('data-subcard-id'));
                                 });
                                 
                                 const subcardCloneBtn = subcardEl.querySelector('.subcard-clone-btn');
@@ -852,9 +966,7 @@
                                 subcardCloneBtn.setAttribute('data-subcard-id', subcard.id);
                                 subcardCloneBtn.addEventListener('click', (e) => {
                                     e.stopPropagation();
-                                    const cardId = e.currentTarget.getAttribute('data-card-id');
-                                    const subcardId = e.currentTarget.getAttribute('data-subcard-id');
-                                    cloneSubcard(cardId, subcardId);
+                                    cloneSubcard(e.currentTarget.getAttribute('data-card-id'), e.currentTarget.getAttribute('data-subcard-id'));
                                 });
                                 
                                 const subcardDeleteBtn = subcardEl.querySelector('.subcard-delete-btn');
@@ -862,28 +974,20 @@
                                 subcardDeleteBtn.setAttribute('data-subcard-id', subcard.id);
                                 subcardDeleteBtn.addEventListener('click', (e) => {
                                     e.stopPropagation();
-                                    const cardId = e.currentTarget.getAttribute('data-card-id');
-                                    const subcardId = e.currentTarget.getAttribute('data-subcard-id');
-                                    showDeleteSubcardConfirmation(cardId, subcardId);
+                                    showDeleteSubcardConfirmation(e.currentTarget.getAttribute('data-card-id'), e.currentTarget.getAttribute('data-subcard-id'));
                                 });
                                 
-                                // Configuração do botão de minimizar do subcard
                                 subcardMinimizeBtn.addEventListener('click', (e) => {
                                     e.stopPropagation();
-                                    const subcardId = subcardEl.dataset.id;
-                                    toggleSubcardMinimize(item.id, subcardId);
+                                    toggleSubcardMinimize(item.id, subcardEl.dataset.id);
                                 });
                                 
-                                // Evento para atualizar o título dinamicamente
                                 subcardTitleEl.addEventListener('input', () => {
                                     const newTitle = subcardTitleEl.innerText;
-                                    // Atualiza o título no estado
                                     const stateItem = state.content.find(i => i.id === item.id);
                                     if (stateItem && stateItem.subcards) {
                                         const subcardItem = stateItem.subcards.find(sc => sc.id === subcard.id);
-                                        if (subcardItem) {
-                                            subcardItem.title = newTitle;
-                                        }
+                                        if (subcardItem) subcardItem.title = newTitle;
                                     }
                                 });
                                 
@@ -891,57 +995,42 @@
                             });
                         }
                         
-                        // Configuração dos botões do card
                         sectionEl.querySelector('.pin-btn').addEventListener('click', () => toggleContentPin(item.id));
                         
-                        // Configuração do botão de adicionar subcard
                         const addSubcardBtn = sectionEl.querySelector('.add-subcard-btn');
                         addSubcardBtn.setAttribute('data-card-id', item.id);
                         addSubcardBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            const cardId = e.currentTarget.getAttribute('data-card-id');
-                            addSubCard(cardId);
+                            addSubCard(e.currentTarget.getAttribute('data-card-id'));
                         });
                         
-                        // Configuração do botão de cópia
                         const copyBtn = sectionEl.querySelector('.copy-btn');
                         copyBtn.setAttribute('data-card-id', item.id);
                         copyBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            const cardId = e.currentTarget.getAttribute('data-card-id');
-                            copyCardContent(cardId);
+                            copyCardContent(e.currentTarget.getAttribute('data-card-id'));
                         });
                         
                         sectionEl.querySelector('.clone-btn').addEventListener('click', () => cloneCard(item.id));
                         
-                        // Configuração do botão de exclusão
                         const deleteBtn = sectionEl.querySelector('.delete-btn');
                         deleteBtn.setAttribute('data-card-id', item.id);
                         deleteBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            const cardId = e.currentTarget.getAttribute('data-card-id');
-                            showDeleteConfirmation(cardId, item.title);
+                            showDeleteConfirmation(e.currentTarget.getAttribute('data-card-id'), item.title);
                         });
                         
-                        // Configuração do botão de minimizar do card
                         minimizeBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
                             toggleCardMinimize(item.id);
                         });
                         
-                        // Evento para atualizar o título dinamicamente
                         titleEl.addEventListener('input', () => {
                             const newTitle = titleEl.innerText;
-                            // Atualiza o título no estado
                             const stateItem = state.content.find(i => i.id === item.id);
-                            if (stateItem) {
-                                stateItem.title = newTitle;
-                            }
-                            // Atualiza o link no sumário
+                            if (stateItem) stateItem.title = newTitle;
                             const sidebarLink = menuNavLinks.querySelector(`a[href="#${item.id}"]`);
-                            if (sidebarLink) {
-                                sidebarLink.textContent = newTitle;
-                            }
+                            if (sidebarLink) sidebarLink.textContent = newTitle;
                         });
                         
                         contentSections.appendChild(sectionClone);
@@ -982,11 +1071,9 @@
             function updateAdminUI() {
                 const editableElements = document.querySelectorAll('[data-editable]');
                 const sections = document.querySelectorAll('#content-sections section');
-                const deleteButtons = document.querySelectorAll('.delete-btn');
-                const cloneButtons = document.querySelectorAll('.clone-btn');
+                const deleteButtons = document.querySelectorAll('.delete-btn, .subcard-delete-btn');
+                const cloneButtons = document.querySelectorAll('.clone-btn, .subcard-clone-btn');
                 const addSubcardButtons = document.querySelectorAll('.add-subcard-btn');
-                const subcardDeleteButtons = document.querySelectorAll('.subcard-delete-btn');
-                const subcardCloneButtons = document.querySelectorAll('.subcard-clone-btn');
                 
                 if (state.isAdmin) {
                     saveBtn.classList.remove('hidden');
@@ -996,8 +1083,6 @@
                     deleteButtons.forEach(btn => btn.classList.remove('hidden'));
                     cloneButtons.forEach(btn => btn.classList.remove('hidden'));
                     addSubcardButtons.forEach(btn => btn.classList.remove('hidden'));
-                    subcardDeleteButtons.forEach(btn => btn.classList.remove('hidden'));
-                    subcardCloneButtons.forEach(btn => btn.classList.remove('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'true'));
                     sections.forEach(sec => sec.setAttribute('draggable', 'true'));
                 } else {
@@ -1008,8 +1093,6 @@
                     deleteButtons.forEach(btn => btn.classList.add('hidden'));
                     cloneButtons.forEach(btn => btn.classList.add('hidden'));
                     addSubcardButtons.forEach(btn => btn.classList.add('hidden'));
-                    subcardDeleteButtons.forEach(btn => btn.classList.add('hidden'));
-                    subcardCloneButtons.forEach(btn => btn.classList.add('hidden'));
                     editableElements.forEach(el => el.setAttribute('contenteditable', 'false'));
                     sections.forEach(sec => sec.setAttribute('draggable', 'false'));
                 }
@@ -1047,7 +1130,6 @@
                 updateSidebarUI();
             }
             
-            // --- Novas Funções de Edição ---
             function addNewCard() {
                 const newId = 'card-' + Date.now();
                 const newCard = {
@@ -1058,15 +1140,11 @@
                     subcards: []
                 };
                 state.content.push(newCard);
-                render(); // Re-renderiza a UI com o novo card
-                
-                // Rola a página para o novo card e foca no título para edição
+                render(); 
                 const newCardElement = document.getElementById(newId);
                 if (newCardElement) {
                     newCardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setTimeout(() => {
-                        newCardElement.querySelector('h2').focus();
-                    }, 300);
+                    setTimeout(() => { newCardElement.querySelector('h2').focus(); }, 300);
                 }
             }
             
@@ -1074,29 +1152,18 @@
                 const parentCard = state.content.find(item => item.id === parentId);
                 if (!parentCard) return;
                 
-                // Inicializa o array de subcards se não existir
-                if (!parentCard.subcards) {
-                    parentCard.subcards = [];
-                }
+                if (!parentCard.subcards) parentCard.subcards = [];
                 
                 const newSubcardId = 'subcard-' + Date.now();
-                const newSubcard = {
-                    id: newSubcardId,
-                    title: 'Novo Subcard',
-                    content: '<p>Comece a editar este conteúdo...</p>',
-                    minimized: false
-                };
+                const newSubcard = { id: newSubcardId, title: 'Novo Subcard', content: '<p>Edite este conteúdo...</p>', minimized: false };
                 
                 parentCard.subcards.push(newSubcard);
                 render();
                 
-                // Rola a página para o novo subcard e foca no título para edição
                 const newSubcardElement = document.querySelector(`[data-id="${newSubcardId}"]`);
                 if (newSubcardElement) {
                     newSubcardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setTimeout(() => {
-                        newSubcardElement.querySelector('.subcard-title').focus();
-                    }, 300);
+                    setTimeout(() => { newSubcardElement.querySelector('.subcard-title').focus(); }, 300);
                 }
             }
             
@@ -1105,13 +1172,10 @@
                 if (originalCardIndex === -1) return;
                 const originalCard = state.content[originalCardIndex];
                 const newCard = {
-                    ...originalCard, // Copia todo o conteúdo
+                    ...originalCard,
                     id: 'card-' + Date.now(),
                     title: `Cópia de ${originalCard.title}`,
-                    subcards: originalCard.subcards ? originalCard.subcards.map(subcard => ({
-                        ...subcard,
-                        id: 'subcard-' + Date.now() + Math.random()
-                    })) : []
+                    subcards: originalCard.subcards ? originalCard.subcards.map(subcard => ({ ...subcard, id: 'subcard-' + Date.now() + Math.random() })) : []
                 };
                 state.content.splice(originalCardIndex + 1, 0, newCard);
                 render();
@@ -1125,11 +1189,7 @@
                 if (originalSubcardIndex === -1) return;
                 
                 const originalSubcard = parentCard.subcards[originalSubcardIndex];
-                const newSubcard = {
-                    ...originalSubcard,
-                    id: 'subcard-' + Date.now(),
-                    title: `Cópia de ${originalSubcard.title}`
-                };
+                const newSubcard = { ...originalSubcard, id: 'subcard-' + Date.now(), title: `Cópia de ${originalSubcard.title}` };
                 
                 parentCard.subcards.splice(originalSubcardIndex + 1, 0, newSubcard);
                 render();
@@ -1138,224 +1198,85 @@
             function toggleCardMinimize(cardId) {
                 const card = state.content.find(item => item.id === cardId);
                 if (!card) return;
-
                 card.minimized = !card.minimized;
-
                 const cardElement = document.getElementById(cardId);
                 if (cardElement) {
-                    const cardContentWrapper = cardElement.querySelector('.card-content-wrapper');
-                    const minimizeBtn = cardElement.querySelector('.minimize-btn');
-                    
-                    if (cardContentWrapper && minimizeBtn) {
-                        cardContentWrapper.classList.toggle('collapsed', card.minimized);
-                        minimizeBtn.classList.toggle('rotated', card.minimized);
-                    }
+                    cardElement.querySelector('.card-content-wrapper')?.classList.toggle('collapsed', card.minimized);
+                    cardElement.querySelector('.minimize-btn')?.classList.toggle('rotated', card.minimized);
                 }
-                
                 saveState();
             }
             
             function toggleSubcardMinimize(parentId, subcardId) {
                 const parentCard = state.content.find(item => item.id === parentId);
-                if (!parentCard || !parentCard.subcards) return;
-                
-                const subcard = parentCard.subcards.find(subcard => subcard.id === subcardId);
+                const subcard = parentCard?.subcards.find(sc => sc.id === subcardId);
                 if (!subcard) return;
-                
                 subcard.minimized = !subcard.minimized;
-                
                 const subcardElement = document.querySelector(`[data-id="${subcardId}"]`);
                 if (subcardElement) {
-                    const subcardContentWrapper = subcardElement.querySelector('.subcard-content-wrapper');
-                    const subcardMinimizeBtn = subcardElement.querySelector('.subcard-minimize-btn');
-
-                    if (subcardContentWrapper && subcardMinimizeBtn) {
-                        subcardContentWrapper.classList.toggle('collapsed', subcard.minimized);
-                        subcardMinimizeBtn.classList.toggle('rotated', subcard.minimized);
-                    }
+                    subcardElement.querySelector('.subcard-content-wrapper')?.classList.toggle('collapsed', subcard.minimized);
+                    subcardElement.querySelector('.subcard-minimize-btn')?.classList.toggle('rotated', subcard.minimized);
                 }
-                
                 saveState();
             }
             
             function showDeleteConfirmation(id, title) {
-                // Armazena o ID do card a ser excluído na variável global
                 cardToDelete = id;
-                
-                // Atualiza o título e mensagem do modal
                 document.getElementById('modal-title').textContent = 'Confirmar Exclusão';
                 document.getElementById('modal-message').textContent = `Você tem certeza que deseja excluir o card "${title}"? Esta ação não pode ser desfeita.`;
-                
-                // Exibe o modal
                 confirmModal.classList.remove('hidden');
                 confirmModal.classList.add('flex');
             }
             
             function showDeleteSubcardConfirmation(parentId, subcardId) {
-                // Armazena os IDs do card e subcard a serem excluídos
                 subcardToDelete = { parentId, subcardId };
-                
-                // Atualiza o título e mensagem do modal
-                document.getElementById('modal-title').textContent = 'Confirmar Exclusão';
-                document.getElementById('modal-message').textContent = `Você tem certeza que deseja excluir este subcard? Esta ação não pode ser desfeita.`;
-                
-                // Exibe o modal
+                document.getElementById('modal-title').textContent = 'Confirmar Exclusão de Subcard';
+                document.getElementById('modal-message').textContent = `Você tem certeza que deseja excluir este subcard?`;
                 confirmModal.classList.remove('hidden');
                 confirmModal.classList.add('flex');
             }
             
             function deleteCard() {
                 if (!cardToDelete) return;
-                
-                // Remove o card do estado
                 state.content = state.content.filter(item => item.id !== cardToDelete);
-                // Remove dos fixados também, se estiver lá
                 state.pinnedItems = state.pinnedItems.filter(pinnedId => pinnedId !== cardToDelete);
-                
-                // Remove o elemento do DOM
-                const cardElement = document.getElementById(cardToDelete);
-                if (cardElement) {
-                    cardElement.remove();
-                }
-                
-                // Limpa a variável global
                 cardToDelete = null;
-                
-                // Salva e renderiza novamente
                 saveState();
                 render();
             }
             
             function deleteSubcard() {
                 if (!subcardToDelete) return;
-                
                 const { parentId, subcardId } = subcardToDelete;
-                
-                // Encontra o card pai
                 const parentCard = state.content.find(item => item.id === parentId);
-                if (!parentCard || !parentCard.subcards) return;
-                
-                // Remove o subcard do estado
-                parentCard.subcards = parentCard.subcards.filter(subcard => subcard.id !== subcardId);
-                
-                // Remove o elemento do DOM
-                const subcardElement = document.querySelector(`[data-id="${subcardId}"]`);
-                if (subcardElement) {
-                    subcardElement.remove();
+                if (parentCard?.subcards) {
+                    parentCard.subcards = parentCard.subcards.filter(subcard => subcard.id !== subcardId);
                 }
-                
-                // Limpa a variável global
                 subcardToDelete = null;
-                
-                // Salva e renderiza novamente
                 saveState();
                 render();
             }
-            
-            // Função para converter HTML para Markdown
+
+            function clearAiHighlights() {
+                document.querySelectorAll('.card-container').forEach(card => {
+                    card.style.display = ''; // Mostra todos os cards
+                    // Remove as marcações de destaque
+                    card.innerHTML = card.innerHTML.replace(/<mark class="ai-search-highlight">(.*?)<\/mark>/gi, '$1');
+                });
+                aiResultsCount.classList.add('hidden');
+                isAiSearchActive = false;
+                // Re-anexa os event listeners que foram perdidos com a manipulação do innerHTML
+                render();
+            }
+
             function htmlToMarkdown(html) {
-                // Cria um elemento temporário para manipular o HTML
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = html;
-                
                 let markdown = '';
-                
-                // Processa cada nó filho
-                Array.from(tempDiv.childNodes).forEach(node => {
-                    markdown += processNode(node);
-                });
-                
+                Array.from(tempDiv.childNodes).forEach(node => { markdown += processNode(node); });
                 return markdown.trim();
             }
-            
-            // Função recursiva para processar nós
-            function processNode(node, depth = 0) {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    return node.textContent;
-                }
-                
-                if (node.nodeType !== Node.ELEMENT_NODE) {
-                    return '';
-                }
-                
-                const tagName = node.tagName.toLowerCase();
-                let result = '';
-                
-                switch (tagName) {
-                    case 'h1':
-                        result = `# ${node.textContent}\n\n`;
-                        break;
-                    case 'h2':
-                        result = `## ${node.textContent}\n\n`;
-                        break;
-                    case 'h3':
-                        result = `### ${node.textContent}\n\n`;
-                        break;
-                    case 'h4':
-                        result = `#### ${node.textContent}\n\n`;
-                        break;
-                    case 'h5':
-                        result = `##### ${node.textContent}\n\n`;
-                        break;
-                    case 'h6':
-                        result = `###### ${node.textContent}\n\n`;
-                        break;
-                    case 'p':
-                        result = `${processChildNodes(node)}\n\n`;
-                        break;
-                    case 'strong':
-                    case 'b':
-                        result = `**${processChildNodes(node)}**`;
-                        break;
-                    case 'em':
-                    case 'i':
-                        result = `*${processChildNodes(node)}*`;
-                        break;
-                    case 'ul':
-                        result = processList(node, false) + '\n';
-                        break;
-                    case 'ol':
-                        result = processList(node, true) + '\n';
-                        break;
-                    case 'li':
-                        result = `- ${processChildNodes(node)}\n`;
-                        break;
-                    case 'blockquote':
-                        result = `> ${processChildNodes(node).trim()}\n\n`;
-                        break;
-                    case 'a':
-                        const href = node.getAttribute('href') || '';
-                        const text = processChildNodes(node);
-                        result = `[${text}](${href})`;
-                        break;
-                    case 'div':
-                        // Processa divs com classes especiais
-                        if (node.classList.contains('bg-red-900/20') || 
-                            node.classList.contains('bg-blue-900/20') || 
-                            node.classList.contains('bg-gray-700/50')) {
-                            result = `\n${processChildNodes(node)}\n`;
-                        } else {
-                            result = processChildNodes(node);
-                        }
-                        break;
-                    default:
-                        // Para outros elementos, apenas processa os filhos
-                        result = processChildNodes(node);
-                }
-                
-                return result;
-            }
-            
-            // Função para processar nós filhos
-            function processChildNodes(node) {
-                let result = '';
-                Array.from(node.childNodes).forEach(child => {
-                    result += processNode(child);
-                });
-                return result;
-            }
-            
-            // Função para processar listas
+
             function processList(listNode, isOrdered) {
                 let result = '';
                 const items = listNode.querySelectorAll('li');
@@ -1368,112 +1289,82 @@
                 return result;
             }
             
+            function processNode(node) {
+                if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+                if (node.nodeType !== Node.ELEMENT_NODE) return '';
+                
+                const tagName = node.tagName.toLowerCase();
+                let result = '';
+                
+                switch (tagName) {
+                    case 'h1': result = `# ${node.textContent}\n\n`; break;
+                    case 'h2': result = `## ${node.textContent}\n\n`; break;
+                    case 'h3': result = `### ${node.textContent}\n\n`; break;
+                    case 'h4': result = `#### ${node.textContent}\n\n`; break;
+                    case 'p': result = `${processChildNodes(node)}\n\n`; break;
+                    case 'strong': case 'b': result = `**${processChildNodes(node)}**`; break;
+                    case 'em': case 'i': result = `*${processChildNodes(node)}*`; break;
+                    case 'ul': result = processList(node, false) + '\n'; break;
+                    case 'ol': result = processList(node, true) + '\n'; break;
+                    case 'li': result = `- ${processChildNodes(node)}\n`; break;
+                    case 'blockquote': result = `> ${processChildNodes(node).trim()}\n\n`; break;
+                    case 'a': result = `[${processChildNodes(node)}](${node.getAttribute('href') || ''})`; break;
+                    default: result = processChildNodes(node);
+                }
+                
+                return result;
+            }
+            
+            function processChildNodes(node) {
+                let result = '';
+                Array.from(node.childNodes).forEach(child => { result += processNode(child); });
+                return result;
+            }
+
             function copyCardContent(cardId) {
                 const card = state.content.find(item => item.id === cardId);
                 if (!card) return;
-                
-                // Extrai o título
-                const titleText = card.title;
-                
-                // Converte o conteúdo HTML para Markdown
-                const contentMarkdown = htmlToMarkdown(card.content);
-                
-                // Combina título e conteúdo
-                const fullText = `# ${titleText}\n\n${contentMarkdown}`;
-                
-                // Copia para a área de transferência
+                const fullText = `# ${card.title}\n\n${htmlToMarkdown(card.content)}`;
                 navigator.clipboard.writeText(fullText).then(() => {
-                    // Exibe notificação de sucesso
                     copyNotification.classList.add('show');
-                    setTimeout(() => {
-                        copyNotification.classList.remove('show');
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Erro ao copiar texto: ', err);
-                    alert('Não foi possível copiar o texto. Tente novamente.');
+                    setTimeout(() => { copyNotification.classList.remove('show'); }, 2000);
                 });
             }
             
             function copySubcardContent(parentId, subcardId) {
                 const parentCard = state.content.find(item => item.id === parentId);
-                if (!parentCard || !parentCard.subcards) return;
-                
-                const subcard = parentCard.subcards.find(subcard => subcard.id === subcardId);
+                const subcard = parentCard?.subcards.find(sc => sc.id === subcardId);
                 if (!subcard) return;
-                
-                // Extrai o título do card pai e do subcard
-                const parentTitleText = parentCard.title;
-                const subcardTitleText = subcard.title;
-                
-                // Converte o conteúdo HTML para Markdown
-                const contentMarkdown = htmlToMarkdown(subcard.content);
-                
-                // Combina título e conteúdo
-                const fullText = `# ${parentTitleText}\n\n## ${subcardTitleText}\n\n${contentMarkdown}`;
-                
-                // Copia para a área de transferência
+                const fullText = `# ${parentCard.title}\n\n## ${subcard.title}\n\n${htmlToMarkdown(subcard.content)}`;
                 navigator.clipboard.writeText(fullText).then(() => {
-                    // Exibe notificação de sucesso
                     copyNotification.classList.add('show');
-                    setTimeout(() => {
-                        copyNotification.classList.remove('show');
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Erro ao copiar texto: ', err);
-                    alert('Não foi possível copiar o texto. Tente novamente.');
+                    setTimeout(() => { copyNotification.classList.remove('show'); }, 2000);
                 });
             }
             
             function resetAllData() {
-                const password = prompt("Digite a senha de administrador para resetar todos os dados:");
-                if (password !== "123") {
-                    alert("Senha incorreta! Ação cancelada.");
-                    return;
-                }
-                
-                if (confirm("Tem certeza que deseja resetar todos os dados? Esta ação não pode ser desfeita.")) {
-                    // Limpa o localStorage
-                    localStorage.removeItem('unintaManualState');
-                    localStorage.removeItem('sidebarPinned');
-                    localStorage.removeItem('unintaApiKey');
-                    
-                    // Reseta o estado para os dados iniciais
+                if (prompt("Digite a senha de admin para resetar:") !== "123") return alert("Senha incorreta!");
+                if (confirm("Tem certeza que deseja resetar TODOS os dados?")) {
+                    localStorage.clear();
                     state.content = [...initialData];
                     state.pinnedItems = [];
                     state.isAdmin = false;
-                    state.isSidebarPinned = true;
-                    state.areCardsMinimized = false;
-                    
-                    // Salva o estado inicial
                     saveState();
-                    
-                    // Renderiza novamente
-                    render();
-                    
-                    alert("Dados resetados com sucesso!");
+                    location.reload();
                 }
             }
             function setupHighlightToolbar() {
-                // Impede que a barra de ferramentas roube o foco, o que desfaz a seleção de texto.
-                highlightToolbar.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                });
+                highlightToolbar.addEventListener('mousedown', (e) => e.preventDefault());
                 document.addEventListener('mouseup', () => {
                     const selection = window.getSelection();
                     if (!selection.isCollapsed && state.isAdmin) {
                         const range = selection.getRangeAt(0);
-                        const rect = range.getBoundingClientRect();
-                        
-                        let parent = range.commonAncestorContainer;
-                        if (parent.nodeType !== Node.ELEMENT_NODE) {
-                            parent = parent.parentNode;
-                        }
+                        let parent = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode;
                         if (parent.closest('[contenteditable="true"]')) {
+                            const rect = range.getBoundingClientRect();
                             highlightToolbar.style.display = 'flex';
                             highlightToolbar.style.left = `${rect.left + window.scrollX + rect.width / 2 - highlightToolbar.offsetWidth / 2}px`;
                             highlightToolbar.style.top = `${rect.top + window.scrollY - highlightToolbar.offsetHeight - 8}px`;
-                        } else {
-                           highlightToolbar.style.display = 'none';
                         }
                     } else {
                         highlightToolbar.style.display = 'none';
@@ -1481,108 +1372,67 @@
                 });
                 highlightToolbar.addEventListener('click', (e) => {
                     const swatch = e.target.closest('.color-swatch');
-                    const removeBtn = e.target.closest('#remove-color-btn');
-                    if (swatch) {
-                        const color = swatch.dataset.color;
-                        document.execCommand('foreColor', false, color);
-                    } else if (removeBtn) {
-                        // removeFormat remove toda a formatação (negrito, etc.), mas é o mais confiável para remover a cor.
-                        document.execCommand('removeFormat', false, null);
-                    }
-                    
-                    // Esconde a barra de ferramentas após a ação
-                    if (swatch || removeBtn) {
-                        highlightToolbar.style.display = 'none';
-                    }
+                    if (swatch) document.execCommand('foreColor', false, swatch.dataset.color);
+                    if (e.target.closest('#remove-color-btn')) document.execCommand('removeFormat', false, null);
+                    highlightToolbar.style.display = 'none';
                 });
             }
             function toggleMinimizeAllCards() {
                 state.areCardsMinimized = !state.areCardsMinimized;
-                const wrappers = document.querySelectorAll('.card-content-wrapper, .subcard-content-wrapper');
-                wrappers.forEach(wrapper => {
-                    wrapper.classList.toggle('collapsed', state.areCardsMinimized);
-                });
-                
-                // Atualiza os ícones de minimização
-                const minimizeBtns = document.querySelectorAll('.minimize-btn, .subcard-minimize-btn');
-                minimizeBtns.forEach(btn => {
-                    btn.classList.toggle('rotated', state.areCardsMinimized);
-                });
+                document.querySelectorAll('.card-content-wrapper, .subcard-content-wrapper').forEach(w => w.classList.toggle('collapsed', state.areCardsMinimized));
+                document.querySelectorAll('.minimize-btn, .subcard-minimize-btn').forEach(b => b.classList.toggle('rotated', state.areCardsMinimized));
             }
             function handleExport() {
-                updateStateFromDOM(); // Garante que o estado está atualizado com as últimas edições
-                const dataToExport = {
-                    content: state.content,
-                    pinnedItems: state.pinnedItems
-                };
-                const dataStr = JSON.stringify(dataToExport, null, 2);
-                const dataBlob = new Blob([dataStr], {type: "application/json"});
-                const url = URL.createObjectURL(dataBlob);
+                updateStateFromDOM();
+                const dataStr = JSON.stringify({ content: state.content, pinnedItems: state.pinnedItems }, null, 2);
+                const blob = new Blob([dataStr], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = 'manual-uninta-dados.json';
                 link.click();
                 URL.revokeObjectURL(url);
             }
-            function handleImport() {
-                importFileInput.click();
-            }
+            function handleImport() { importFileInput.click(); }
             function processImportedFile(event) {
                 const file = event.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const importedData = JSON.parse(e.target.result);
-                        if (importedData.content && Array.isArray(importedData.content)) {
-                            state.content = importedData.content;
-                            state.pinnedItems = importedData.pinnedItems || [];
+                        const data = JSON.parse(e.target.result);
+                        if (data.content) {
+                            state.content = data.content;
+                            state.pinnedItems = data.pinnedItems || [];
                             saveState();
                             render();
                             alert('Dados importados com sucesso!');
-                        } else {
-                            alert('Arquivo inválido. O formato dos dados não é o esperado.');
                         }
-                    } catch (error) {
-                        alert('Erro ao ler o arquivo. Verifique se é um arquivo JSON válido.');
-                        console.error("Erro ao importar:", error);
-                    }
+                    } catch (error) { alert('Erro ao ler o arquivo.'); }
                 };
                 reader.readAsText(file);
-                // Reseta o valor para poder importar o mesmo arquivo novamente
-                importFileInput.value = '';
+                event.target.value = '';
             }
-            // --- Drag & Drop ---
+            // Drag & Drop
             let draggedItem = null;
             contentSections.addEventListener('dragstart', (e) => {
-                if (!state.isAdmin) return;
-                draggedItem = e.target.closest('section');
-                if (draggedItem) {
-                    setTimeout(() => { draggedItem.classList.add('dragging'); }, 0);
-                    e.dataTransfer.effectAllowed = 'move';
+                if (state.isAdmin && e.target.closest('section')) {
+                    draggedItem = e.target.closest('section');
+                    setTimeout(() => draggedItem.classList.add('dragging'), 0);
                 }
             });
-            contentSections.addEventListener('dragend', () => { if (draggedItem) { draggedItem.classList.remove('dragging'); draggedItem = null; } });
+            contentSections.addEventListener('dragend', () => { if (draggedItem) draggedItem.classList.remove('dragging'); draggedItem = null; });
             contentSections.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                if (!state.isAdmin || !draggedItem) return;
                 const target = e.target.closest('section');
-                if (target && target !== draggedItem) {
+                if (draggedItem && target && target !== draggedItem) {
                     const rect = target.getBoundingClientRect();
-                    const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-                    contentSections.insertBefore(draggedItem, next && target.nextSibling || target);
+                    const next = (e.clientY - rect.top) / rect.height > 0.5;
+                    contentSections.insertBefore(draggedItem, next ? target.nextSibling : target);
                 }
             });
-            contentSections.addEventListener('drop', (e) => { 
-                e.preventDefault(); 
-                if (state.isAdmin) { 
-                    updateStateFromDOM();
-                    saveState(); 
-                    render(); 
-                } 
-            });
+            contentSections.addEventListener('drop', (e) => { if(state.isAdmin) { updateStateFromDOM(); saveState(); render(); } });
 
-            // --- Lógica de Pesquisa e Configurações ---
             function handleSearch() {
                 const searchTerm = searchInput.value.toLowerCase();
                 const cards = document.querySelectorAll('#content-sections > section');
@@ -1609,162 +1459,219 @@
                 });
             }
 
-            async function handleAiSearch() {
+            function highlightTextInElement(element, snippet) {
+                if (!element || !snippet) return;
+                const sanitizedSnippet = snippet.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(sanitizedSnippet, 'gi');
+                const contentHolders = element.querySelectorAll('[data-editable], .subcard-title');
+                contentHolders.forEach(holder => {
+                    holder.innerHTML = holder.innerHTML.replace(regex, match => `<mark class="ai-search-highlight">${match}</mark>`);
+                });
+            }
+
+            async function handleRelatedSearches(originalQuery) {
+                const suggestionsContainer = document.getElementById('ai-suggestions-container');
+                const suggestionsList = document.getElementById('ai-suggestions-list');
                 const apiKey = localStorage.getItem('unintaApiKey');
-                const searchTerm = searchInput.value;
 
                 if (!apiKey) {
-                    alert('Por favor, insira sua chave de API nas configurações para usar a busca inteligente.');
-                    return;
-                }
-                if (!searchTerm.trim()) {
-                    alert('Por favor, digite um termo para a busca inteligente.');
+                    suggestionsContainer.classList.add('hidden');
                     return;
                 }
 
-                const aiSearchIcon = aiSearchBtn.querySelector('i');
-                aiSearchIcon.classList.add('spinning');
-
-                const tempDiv = document.createElement('div');
-                const simplifiedContent = state.content.flatMap(card => {
-                    const cardContent = {
-                        id: card.id,
-                        title: card.title,
-                        text: ''
-                    };
-                    tempDiv.innerHTML = card.content;
-                    cardContent.text = tempDiv.textContent || tempDiv.innerText || '';
-                    
-                    const subcardContents = (card.subcards || []).map(subcard => {
-                        tempDiv.innerHTML = subcard.content;
-                        return {
-                            id: subcard.id,
-                            title: `${card.title} -> ${subcard.title}`,
-                            text: tempDiv.textContent || tempDiv.innerText || ''
-                        };
-                    });
-                    return [cardContent, ...subcardContents];
-                });
-
-                const prompt = `Você é um assistente de busca inteligente para um manual. Sua tarefa é encontrar a seção mais relevante com base na pergunta do usuário. O conteúdo do manual é fornecido como um array JSON. A pergunta do usuário pode conter erros de digitação ou ser uma pergunta indireta. Sua resposta DEVE SER APENAS o 'id' do card ou subcard mais relevante. Não adicione nenhum outro texto ou explicação. Conteúdo do Manual: ${JSON.stringify(simplifiedContent)}. Pergunta do Usuário: "${searchTerm}". ID mais relevante:`;
+                const prompt = `Baseado na busca do usuário: "${originalQuery}", gere até 3 buscas relacionadas concisas que exploram o tópico em diferentes aspectos. Retorne um array JSON de strings. Exemplo de saída: ["sugestão 1", "sugestão 2", "sugestão 3"]`;
 
                 try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`, {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }]
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        }),
+                    });
+                    if (!response.ok) return; // Fail silently if suggestions fail
+
+                    const result = await response.json();
+                    const responseText = result.candidates[0].content.parts[0].text;
+                    const suggestions = JSON.parse(responseText);
+
+                    if (Array.isArray(suggestions) && suggestions.length > 0) {
+                        suggestionsList.innerHTML = ''; // Clear previous suggestions
+                        suggestions.forEach(suggestionText => {
+                            const suggestionBtn = document.createElement('button');
+                            suggestionBtn.className = "text-xs bg-gray-700/50 text-gray-300 px-3 py-1 rounded-full hover:bg-indigo-600 hover:text-white transition-colors duration-200";
+                            suggestionBtn.textContent = suggestionText;
+                            suggestionBtn.onclick = () => {
+                                aiSearchPrompt.value = suggestionText;
+                                aiSearchPrompt.focus();
+                            };
+                            suggestionsList.appendChild(suggestionBtn);
+                        });
+                        suggestionsContainer.classList.remove('hidden');
+                    } else {
+                        suggestionsContainer.classList.add('hidden');
+                    }
+                } catch (error) {
+                    console.error("Error fetching related searches:", error);
+                    suggestionsContainer.classList.add('hidden');
+                }
+            }
+
+
+            async function handleAiSearch(searchTermParam) {
+                const apiKey = localStorage.getItem('unintaApiKey');
+                if (!apiKey) return showSearchNotification('Chave de API não configurada.', 'error');
+                if (!searchTermParam.trim()) return showSearchNotification('Digite um termo para buscar.', 'error');
+                
+                document.getElementById('ai-suggestions-container').classList.add('hidden');
+                clearAiHighlights();
+                progressBar.style.transitionDuration = '10s';
+                progressBar.style.opacity = '1';
+                progressBar.style.width = '90%';
+
+                const simplifiedContent = state.content.map(c => ({ id: c.id, title: c.title, text: c.content, subcards: c.subcards.map(sc => ({id: sc.id, title: sc.title, text: sc.content})) }));
+
+                const prompt = `Analise o conteúdo JSON de um manual. O usuário perguntou: "${searchTermParam}". Sua tarefa é encontrar as seções mais relevantes. Retorne um array JSON de objetos, cada um com "id" e "snippet" (um trecho EXATO do texto). Limite a 5 resultados. Conteúdo: ${JSON.stringify(simplifiedContent)}`;
+                
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { responseMimeType: "application/json" }
                         }),
                     });
 
-                    if (!response.ok) {
-                        throw new Error(`Erro na API: ${response.statusText}`);
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    const result = await response.json();
+                    const responseText = result.candidates[0].content.parts[0].text;
+                    let parsedData = JSON.parse(responseText);
+                    let searchResults = [];
+
+                    // Robustly handle different possible JSON structures from the LLM
+                    if (Array.isArray(parsedData)) {
+                        searchResults = parsedData;
+                    } else if (typeof parsedData === 'object' && parsedData !== null) {
+                        const keys = Object.keys(parsedData);
+                        if (keys.length === 1 && Array.isArray(parsedData[keys[0]])) {
+                            searchResults = parsedData[keys[0]];
+                        } else {
+                            searchResults = [parsedData];
+                        }
                     }
 
-                    const result = await response.json();
-                    const resultId = result.candidates[0].content.parts[0].text.trim();
-                    
-                    const elementToHighlight = document.getElementById(resultId) || document.querySelector(`[data-id="${resultId}"]`);
+                    if (!searchResults || searchResults.length === 0 || typeof searchResults[0].id === 'undefined') {
+                         console.error("Resultados da busca em formato inválido ou vazio:", searchResults);
+                        return showSearchNotification('Nenhum resultado relevante encontrado ou formato de resposta inválido.', 'info');
+                    }
 
-                    if (elementToHighlight) {
-                        // Remove highlight de qualquer outro elemento
-                        document.querySelectorAll('.ai-highlight').forEach(el => el.classList.remove('ai-highlight'));
+                    document.querySelectorAll('.card-container').forEach(c => c.style.display = 'none');
+                    const foundIds = new Set();
 
-                        elementToHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        elementToHighlight.classList.add('ai-highlight');
-                        // Remove a classe após a animação terminar para poder ser aplicada novamente
-                        setTimeout(() => {
-                            elementToHighlight.classList.remove('ai-highlight');
-                        }, 4000); // Duração da animação (2s) * número de iterações (2)
-                    } else {
-                        alert('Não foi possível encontrar um resultado relevante para a sua busca.');
+                    searchResults.forEach(res => {
+                        const element = document.getElementById(res.id) || document.querySelector(`[data-id="${res.id}"]`);
+                        if (element) {
+                            const cardContainer = element.closest('.card-container');
+                            if (cardContainer) {
+                                cardContainer.style.display = '';
+                                foundIds.add(cardContainer.id);
+                                highlightTextInElement(cardContainer, res.snippet);
+                            }
+                        }
+                    });
+
+                    aiResultsCount.textContent = `${foundIds.size} resultados`;
+                    aiResultsCount.classList.remove('hidden');
+                    showSearchNotification('Busca concluída!', 'success');
+                    isAiSearchActive = true;
+
+                    if (foundIds.size > 0) {
+                        handleRelatedSearches(searchTermParam);
                     }
 
                 } catch (error) {
-                    console.error('Erro na busca com IA:', error);
-                    alert('Ocorreu um erro ao realizar a busca inteligente. Verifique sua chave de API e a conexão.');
+                    console.error('AI Search Error:', error);
+                    showSearchNotification('Erro na busca inteligente.', 'error');
+                    clearAiHighlights();
                 } finally {
-                    aiSearchIcon.classList.remove('spinning');
+                    progressBar.style.width = '100%';
+                    setTimeout(() => { progressBar.style.opacity = '0'; setTimeout(() => progressBar.style.width = '0%', 300); }, 300);
                 }
             }
 
             // --- EVENT LISTENERS ---
             adminToggleBtn.addEventListener('click', toggleAdminMode);
-            saveBtn.addEventListener('click', () => {
-                updateStateFromDOM();
-                saveState();
-            });
+            saveBtn.addEventListener('click', () => { updateStateFromDOM(); saveState(); });
             addCardBtn.addEventListener('click', addNewCard);
             resetBtn.addEventListener('click', resetAllData);
             pinSidebarBtn.addEventListener('click', toggleSidebarPin);
             minimizeAllBtn.addEventListener('click', toggleMinimizeAllCards);
-            openSidebarBtn.addEventListener('click', () => {
-                sidebar.classList.remove('-translate-x-full');
-            });
+            openSidebarBtn.addEventListener('click', () => sidebar.classList.remove('-translate-x-full'));
             document.addEventListener('click', (e) => {
                 if (window.innerWidth < 1024 && !sidebar.contains(e.target) && !openSidebarBtn.contains(e.target)) {
                     sidebar.classList.add('-translate-x-full');
                 }
             });
             
-            // Listeners do Modal de Confirmação
-            modalCancelBtn.addEventListener('click', () => {
-                confirmModal.classList.add('hidden');
-                confirmModal.classList.remove('flex');
-                cardToDelete = null;
-                subcardToDelete = null;
-            });
-            
+            modalCancelBtn.addEventListener('click', () => { confirmModal.classList.add('hidden'); });
             modalConfirmBtn.addEventListener('click', () => {
-                if (cardToDelete) {
-                    deleteCard();
-                } else if (subcardToDelete) {
-                    deleteSubcard();
-                }
+                if (cardToDelete) deleteCard();
+                else if (subcardToDelete) deleteSubcard();
                 confirmModal.classList.add('hidden');
-                confirmModal.classList.remove('flex');
             });
             
-            // Listeners de Importar/Exportar
             importBtn.addEventListener('click', handleImport);
             exportBtn.addEventListener('click', handleExport);
             importFileInput.addEventListener('change', processImportedFile);
 
-            // Listeners de Pesquisa e Configurações
-            searchBtn.addEventListener('click', () => {
-                searchInput.classList.toggle('active');
-                if (searchInput.classList.contains('active')) {
-                    searchInput.focus();
+            searchBtn.addEventListener('click', () => searchInput.classList.toggle('active') && searchInput.focus());
+            searchInput.addEventListener('input', handleSearch);
+            aiSearchBtn.addEventListener('click', () => {
+                if (isAiSearchActive) {
+                    clearAiHighlights();
+                } else {
+                    aiSearchModal.classList.remove('hidden');
+                    aiSearchModal.classList.add('flex');
+                    aiSearchPrompt.focus();
                 }
             });
-            searchInput.addEventListener('input', handleSearch);
-            aiSearchBtn.addEventListener('click', handleAiSearch);
 
             settingsBtn.addEventListener('click', () => {
                 settingsModal.classList.remove('hidden');
                 settingsModal.classList.add('flex');
             });
-
-            settingsCancelBtn.addEventListener('click', () => {
-                settingsModal.classList.add('hidden');
-                settingsModal.classList.remove('flex');
-            });
-
+            settingsCancelBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
             settingsSaveBtn.addEventListener('click', () => {
                 localStorage.setItem('unintaApiKey', apiKeyInput.value);
                 settingsModal.classList.add('hidden');
-                settingsModal.classList.remove('flex');
-                alert('Chave de API salva com sucesso!');
+                alert('Chave de API salva!');
             });
 
+            aiSearchCancelBtn.addEventListener('click', () => {
+                aiSearchModal.classList.add('hidden');
+                document.getElementById('ai-suggestions-container').classList.add('hidden');
+            });
+            aiSearchConfirmBtn.addEventListener('click', () => {
+                const promptText = aiSearchPrompt.value.trim();
+                aiSearchConfirmBtn.disabled = true;
+                aiSearchConfirmBtn.innerHTML = '<i data-lucide="loader" class="spinning"></i> Buscando...';
+                lucide.createIcons();
+                
+                handleAiSearch(promptText).finally(() => {
+                    aiSearchModal.classList.add('hidden');
+                    aiSearchConfirmBtn.disabled = false;
+                    aiSearchConfirmBtn.innerHTML = 'Buscar';
+                    aiSearchPrompt.value = '';
+                });
+            });
 
             // --- INICIALIZAÇÃO ---
             loadState();
             setupHighlightToolbar();
-            lucide.createIcons();
         });
     </script>
 </body>
 </html>
+
